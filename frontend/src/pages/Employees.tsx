@@ -3,8 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEmployees, getTeams, updateEmployee } from '../api/client';
 import { Employee, Team } from '../types';
 import { clsx } from 'clsx';
+import { useLanguage } from '../i18n';
 
 export default function Employees() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'employees' | 'teams'>('employees');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -53,7 +55,7 @@ export default function Employees() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Personal</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t.employees.title}</h2>
       </div>
 
       {/* Tabs */}
@@ -68,7 +70,7 @@ export default function Employees() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             )}
           >
-            Empleados ({employees.length})
+            {t.employees.employeesTab} ({employees.length})
           </button>
           <button
             onClick={() => setActiveTab('teams')}
@@ -79,7 +81,7 @@ export default function Employees() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             )}
           >
-            Equipos/Parejas ({teams.length})
+            {t.employees.teamsTab} ({teams.length})
           </button>
         </nav>
       </div>
@@ -88,19 +90,19 @@ export default function Employees() {
       {activeTab === 'employees' && (
         <div className="card">
           {loadingEmployees ? (
-            <p className="text-gray-500">Cargando empleados...</p>
+            <p className="text-gray-500">{t.common.loadingEmployees}</p>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="text-left p-3">Código</th>
-                  <th className="text-left p-3">Nombre</th>
-                  <th className="text-left p-3">Rol</th>
-                  <th className="text-center p-3">Horas/Semana</th>
-                  <th className="text-center p-3">Elasticidad</th>
-                  <th className="text-center p-3">Bloques</th>
+                  <th className="text-left p-3">{t.employees.code}</th>
+                  <th className="text-left p-3">{t.employees.name}</th>
+                  <th className="text-left p-3">{t.employees.role}</th>
+                  <th className="text-center p-3">{t.employees.hoursWeek}</th>
+                  <th className="text-center p-3">{t.employees.elasticity}</th>
+                  <th className="text-center p-3">{t.employees.blocks}</th>
                   <th className="text-center p-3">Night</th>
-                  <th className="text-center p-3">Estado</th>
+                  <th className="text-center p-3">{t.employees.status}</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,16 +150,16 @@ export default function Employees() {
                     </td>
                     <td className="p-3 text-center">
                       {employee.can_work_night ? (
-                        <span className="text-green-600">Si</span>
+                        <span className="text-green-600">{t.employees.yes}</span>
                       ) : (
-                        <span className="text-gray-400">No</span>
+                        <span className="text-gray-400">{t.employees.no}</span>
                       )}
                     </td>
                     <td className="p-3 text-center">
                       {employee.is_active ? (
-                        <span className="badge badge-success">Activo</span>
+                        <span className="badge badge-success">{t.employees.active}</span>
                       ) : (
-                        <span className="badge badge-danger">Inactivo</span>
+                        <span className="badge badge-danger">{t.employees.inactive}</span>
                       )}
                     </td>
                   </tr>
@@ -172,7 +174,7 @@ export default function Employees() {
       {activeTab === 'teams' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {loadingTeams ? (
-            <p className="text-gray-500">Cargando equipos...</p>
+            <p className="text-gray-500">{t.common.loadingTeams}</p>
           ) : (
             teams.map((team: Team) => (
               <div key={team.id} className="card">
@@ -192,7 +194,7 @@ export default function Employees() {
 
                 <div className="space-y-2">
                   <div className="text-sm text-gray-500">
-                    {team.member_count} miembros
+                    {team.member_count} {t.employees.members}
                   </div>
 
                   <div className="space-y-1">
@@ -207,7 +209,7 @@ export default function Employees() {
 
                 {!team.is_active && (
                   <div className="mt-3">
-                    <span className="badge badge-danger">Inactivo</span>
+                    <span className="badge badge-danger">{t.employees.inactive}</span>
                   </div>
                 )}
               </div>
@@ -215,7 +217,7 @@ export default function Employees() {
           )}
           {teams.length === 0 && (
             <p className="text-gray-500 col-span-full text-center py-8">
-              No hay equipos configurados
+              {t.employees.noTeams}
             </p>
           )}
         </div>

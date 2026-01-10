@@ -506,22 +506,22 @@ export default function WeeklyPlanning() {
                   {/* Resumen semanal de horas */}
                   {(loadExplanation as any).weekly_summary && (
                     <div className="p-4 bg-blue-50 border-b">
-                      <h5 className="font-semibold text-blue-800 mb-3">Resumen Semanal de Horas</h5>
+                      <h5 className="font-semibold text-blue-800 mb-3">{t.weekly.legend.weeklySummary}</h5>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                         <div className="bg-white rounded p-2 text-center">
-                          <div className="text-xs text-gray-500">Contratadas</div>
+                          <div className="text-xs text-gray-500">{t.weekly.legend.contracted}</div>
                           <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.contracted}h</div>
                         </div>
                         <div className="bg-white rounded p-2 text-center">
-                          <div className="text-xs text-gray-500">Asignadas</div>
+                          <div className="text-xs text-gray-500">{t.weekly.legend.assigned}</div>
                           <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.assigned}h</div>
                         </div>
                         <div className="bg-white rounded p-2 text-center">
-                          <div className="text-xs text-gray-500">Necesarias (carga)</div>
+                          <div className="text-xs text-gray-500">{t.weekly.legend.needed}</div>
                           <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.needed}h</div>
                         </div>
                         <div className="bg-white rounded p-2 text-center">
-                          <div className="text-xs text-gray-500">Sobra/Déficit</div>
+                          <div className="text-xs text-gray-500">{t.weekly.legend.spareDeficit}</div>
                           <div className={`font-bold text-lg ${(loadExplanation as any).weekly_summary.totals.assigned_vs_needed >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {(loadExplanation as any).weekly_summary.totals.assigned_vs_needed >= 0 ? '+' : ''}
                             {(loadExplanation as any).weekly_summary.totals.assigned_vs_needed}h
@@ -529,11 +529,11 @@ export default function WeeklyPlanning() {
                         </div>
                       </div>
                       <div className="text-xs text-blue-700">
-                        <span className="font-medium">Por empleado: </span>
+                        <span className="font-medium">{t.weekly.legend.byEmployee}: </span>
                         {(loadExplanation as any).weekly_summary.employees.map((emp: any, idx: number) => (
                           <span key={idx}>
                             {emp.name.split(' ')[0]}: {emp.assigned}h/{emp.contracted}h
-                            {emp.pending !== 0 && <span className={emp.pending > 0 ? 'text-yellow-600' : 'text-green-600'}> ({emp.pending > 0 ? 'faltan' : 'extra'} {Math.abs(emp.pending)}h)</span>}
+                            {emp.pending !== 0 && <span className={emp.pending > 0 ? 'text-yellow-600' : 'text-green-600'}> ({emp.pending > 0 ? t.weekly.legend.missing : t.weekly.legend.extra} {Math.abs(emp.pending)}h)</span>}
                             {idx < (loadExplanation as any).weekly_summary.employees.length - 1 && ' · '}
                           </span>
                         ))}
@@ -644,8 +644,8 @@ export default function WeeklyPlanning() {
                                     {/* Header */}
                                     <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                       <div className="flex justify-between items-center text-sm">
-                                        <span className="font-semibold text-gray-700">Distribución del día</span>
-                                        <span className="text-gray-500">{totalRooms} hab + {occupied} couv</span>
+                                        <span className="font-semibold text-gray-700">{t.weekly.legend.dailyDistribution}</span>
+                                        <span className="text-gray-500">{totalRooms} {t.weekly.legend.rooms} + {occupied} {t.weekly.legend.couv}</span>
                                       </div>
                                     </div>
 
@@ -657,14 +657,14 @@ export default function WeeklyPlanning() {
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">Mañana sola</span>
+                                              <span className="text-xs text-gray-500">{t.weekly.legend.morningAlone}</span>
                                               {renderBalance(p1Balance)}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{departsDoneP1 + recouchDoneP1} hab</span>
-                                            {departsDoneP1 > 0 && <span className="text-red-600 ml-1">({departsDoneP1} depart)</span>}
-                                            {recouchDoneP1 > 0 && <span className="text-green-600 ml-1">({recouchDoneP1} recouch)</span>}
+                                            <span className="font-medium">{departsDoneP1 + recouchDoneP1} {t.weekly.legend.rooms}</span>
+                                            {departsDoneP1 > 0 && <span className="text-red-600 ml-1">({departsDoneP1} {t.weekly.legend.depart})</span>}
+                                            {recouchDoneP1 > 0 && <span className="text-green-600 ml-1">({recouchDoneP1} {t.weekly.legend.recouch})</span>}
                                           </div>
                                           {numDay > 0 && <div className="text-xs text-blue-600 mt-0.5">{dayNames}</div>}
                                         </div>
@@ -673,7 +673,7 @@ export default function WeeklyPlanning() {
                                       {/* Almuerzo Mañana */}
                                       <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
                                         <div className="text-base">🍽️</div>
-                                        <span className="text-xs text-gray-500">12:30 - 13:30 Almuerzo turno mañana</span>
+                                        <span className="text-xs text-gray-500">12:30 - 13:30 {t.weekly.legend.morningLunch}</span>
                                       </div>
 
                                       {/* Período 2: Mañana + Tarde */}
@@ -683,14 +683,14 @@ export default function WeeklyPlanning() {
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">Mañana + Tarde</span>
+                                              <span className="text-xs text-gray-500">{t.weekly.legend.morningEvening}</span>
                                               {renderBalance(p2Balance)}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{departsDoneP2 + recouchDoneP2} hab</span>
-                                            {departsDoneP2 > 0 && <span className="text-red-600 ml-1">({departsDoneP2} depart)</span>}
-                                            {recouchDoneP2 > 0 && <span className="text-green-600 ml-1">({recouchDoneP2} recouch)</span>}
+                                            <span className="font-medium">{departsDoneP2 + recouchDoneP2} {t.weekly.legend.rooms}</span>
+                                            {departsDoneP2 > 0 && <span className="text-red-600 ml-1">({departsDoneP2} {t.weekly.legend.depart})</span>}
+                                            {recouchDoneP2 > 0 && <span className="text-green-600 ml-1">({recouchDoneP2} {t.weekly.legend.recouch})</span>}
                                           </div>
                                           <div className="text-xs mt-0.5">
                                             {numDay > 0 && <span className="text-blue-600">{dayNames}</span>}
@@ -707,14 +707,14 @@ export default function WeeklyPlanning() {
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">Tarde termina</span>
+                                              <span className="text-xs text-gray-500">{t.weekly.legend.eveningFinishes}</span>
                                               {renderBalance(p3Balance)}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             {recouchLeftP3 > 0
-                                              ? <span className="font-medium">{recouchLeftP3} recouch pendientes</span>
-                                              : <span className="text-green-600">Sin pendientes</span>
+                                              ? <span className="font-medium">{recouchLeftP3} {t.weekly.legend.recouch} {t.weekly.legend.pending}</span>
+                                              : <span className="text-green-600">{t.weekly.legend.noPending}</span>
                                             }
                                           </div>
                                           {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
@@ -724,7 +724,7 @@ export default function WeeklyPlanning() {
                                       {/* Almuerzo Tarde */}
                                       <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
                                         <div className="text-base">🍽️</div>
-                                        <span className="text-xs text-gray-500">18:30 - 19:00 Almuerzo turno tarde</span>
+                                        <span className="text-xs text-gray-500">18:30 - 19:00 {t.weekly.legend.eveningLunch}</span>
                                       </div>
 
                                       {/* Couverture */}
@@ -734,13 +734,13 @@ export default function WeeklyPlanning() {
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-orange-700 text-sm">19:00 - 21:30</span>
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">Couverture</span>
+                                              <span className="text-xs text-gray-500">{t.weekly.legend.couvertures}</span>
                                               {renderBalance(couvBalance)}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{occupied} couvertures</span>
-                                            {numEvening > 0 && <span className="text-orange-600 ml-1">(~{Math.round(occupied/numEvening)} c/u)</span>}
+                                            <span className="font-medium">{occupied} {t.weekly.legend.couvertures}</span>
+                                            {numEvening > 0 && <span className="text-orange-600 ml-1">(~{Math.round(occupied/numEvening)} {t.weekly.legend.perPerson})</span>}
                                           </div>
                                           {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
                                         </div>
@@ -750,7 +750,7 @@ export default function WeeklyPlanning() {
                                       {(day as any).hours_balance && (
                                         <div className="px-3 py-2 bg-gray-100 border-t border-gray-200">
                                           <div className="flex items-center gap-2 text-xs">
-                                            <span className="font-semibold text-gray-700">Balance:</span>
+                                            <span className="font-semibold text-gray-700">{t.weekly.legend.balance}:</span>
                                             {(() => {
                                               const balance = (day as any).hours_balance;
                                               const spare = balance.total.spare;
@@ -759,7 +759,7 @@ export default function WeeklyPlanning() {
                                               return (
                                                 <>
                                                   <span className="text-gray-600">
-                                                    {balance.total.assigned}h asignadas / {balance.total.needed}h necesarias
+                                                    {balance.total.assigned}h {t.weekly.legend.assignedHours} / {balance.total.needed}h {t.weekly.legend.neededHours}
                                                   </span>
                                                   <span className={`font-medium ${spareClass}`}>
                                                     {spareIcon} {spare >= 0 ? '+' : ''}{spare}h

@@ -2,11 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { getDashboard, resolveAlert } from '../api/client';
 import { DashboardData, PlanningAlert } from '../types';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, fr } from 'date-fns/locale';
 import { clsx } from 'clsx';
 import { useState } from 'react';
+import { useLanguage } from '../i18n';
 
 export default function Dashboard() {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'fr' ? fr : es;
+
   const [weekStart, setWeekStart] = useState(() => {
     const today = new Date();
     return format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -31,7 +35,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Cargando dashboard...</div>
+        <div className="text-gray-500">{t.common.loadingDashboard}</div>
       </div>
     );
   }
@@ -39,7 +43,7 @@ export default function Dashboard() {
   if (error || !data) {
     return (
       <div className="bg-red-50 p-4 rounded-md">
-        <p className="text-red-800">Error al cargar el dashboard</p>
+        <p className="text-red-800">{t.dashboard.errorLoading}</p>
       </div>
     );
   }
@@ -49,18 +53,18 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Dashboard Gouvernante</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h2>
           <p className="text-gray-500">
-            Semana del {format(parseISO(data.week_start), 'd MMMM', { locale: es })} al{' '}
-            {format(parseISO(data.week_end), 'd MMMM yyyy', { locale: es })}
+            {t.dashboard.weekOf} {format(parseISO(data.week_start), 'd MMMM', { locale: dateLocale })} {t.dashboard.to}{' '}
+            {format(parseISO(data.week_end), 'd MMMM yyyy', { locale: dateLocale })}
           </p>
         </div>
         <div className="flex space-x-2">
           <button onClick={() => changeWeek(-1)} className="btn btn-secondary">
-            Semana anterior
+            {t.dashboard.previousWeek}
           </button>
           <button onClick={() => changeWeek(1)} className="btn btn-secondary">
-            Semana siguiente
+            {t.dashboard.nextWeek}
           </button>
         </div>
       </div>
@@ -68,24 +72,24 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card">
-          <div className="text-sm text-gray-500">Carga Total</div>
+          <div className="text-sm text-gray-500">{t.dashboard.totalLoad}</div>
           <div className="text-2xl font-bold">
             {Math.round(data.load.total_minutes / 60)}h
           </div>
           <div className="text-sm text-gray-400">
-            {data.load.total_tasks} tareas
+            {data.load.total_tasks} {t.common.tasks}
           </div>
         </div>
 
         <div className="card">
-          <div className="text-sm text-gray-500">Capacidad</div>
+          <div className="text-sm text-gray-500">{t.dashboard.capacity}</div>
           <div className="text-2xl font-bold">
             {Math.round(data.capacity.total_minutes / 60)}h
           </div>
         </div>
 
         <div className="card">
-          <div className="text-sm text-gray-500">Balance</div>
+          <div className="text-sm text-gray-500">{t.dashboard.balance}</div>
           <div
             className={clsx(
               'text-2xl font-bold',
@@ -98,7 +102,7 @@ export default function Dashboard() {
         </div>
 
         <div className="card">
-          <div className="text-sm text-gray-500">Ocupación</div>
+          <div className="text-sm text-gray-500">{t.dashboard.occupancy}</div>
           <div
             className={clsx(
               'text-2xl font-bold',
@@ -112,7 +116,7 @@ export default function Dashboard() {
 
       {/* Daily View */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Carga por Día</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.dashboard.loadByDay}</h3>
         <div className="grid grid-cols-7 gap-2">
           {data.days.map((day) => (
             <div
@@ -123,10 +127,10 @@ export default function Dashboard() {
               )}
             >
               <div className="text-sm font-medium text-gray-600">
-                {format(parseISO(day.date), 'EEE', { locale: es })}
+                {format(parseISO(day.date), 'EEE', { locale: dateLocale })}
               </div>
               <div className="text-xs text-gray-400">
-                {format(parseISO(day.date), 'd MMM', { locale: es })}
+                {format(parseISO(day.date), 'd MMM', { locale: dateLocale })}
               </div>
               <div
                 className={clsx(
@@ -140,7 +144,7 @@ export default function Dashboard() {
                 {Math.round(day.load_minutes / 60)}h / {Math.round(day.capacity_minutes / 60)}h
               </div>
               {day.is_overloaded && (
-                <span className="badge badge-danger mt-2">Sobrecarga</span>
+                <span className="badge badge-danger mt-2">{t.dashboard.overload}</span>
               )}
             </div>
           ))}
@@ -151,7 +155,7 @@ export default function Dashboard() {
       {data.alerts.length > 0 && (
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">
-            Alertas ({data.alerts.length})
+            {t.dashboard.alerts} ({data.alerts.length})
           </h3>
           <div className="space-y-3">
             {data.alerts.map((alert: PlanningAlert) => (
@@ -182,7 +186,7 @@ export default function Dashboard() {
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {format(parseISO(alert.date), 'd MMM', { locale: es })}
+                    {format(parseISO(alert.date), 'd MMM', { locale: dateLocale })}
                     {alert.time_block_code && ` - ${alert.time_block_code}`}
                   </p>
                 </div>
@@ -190,7 +194,7 @@ export default function Dashboard() {
                   onClick={() => handleResolveAlert(alert.id)}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  Resolver
+                  {t.common.resolve}
                 </button>
               </div>
             ))}
@@ -200,7 +204,7 @@ export default function Dashboard() {
 
       {/* Load by Block */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Carga por Bloque</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.dashboard.loadByBlock}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Object.entries(data.load.by_block).map(([blockCode, blockData]) => (
             <div key={blockCode} className="bg-gray-50 p-4 rounded-lg">
@@ -208,7 +212,7 @@ export default function Dashboard() {
               <div className="text-2xl font-bold mt-2">
                 {Math.round(blockData.minutes / 60)}h
               </div>
-              <div className="text-sm text-gray-500">{blockData.tasks} tareas</div>
+              <div className="text-sm text-gray-500">{blockData.tasks} {t.common.tasks}</div>
             </div>
           ))}
         </div>

@@ -4,8 +4,10 @@ import { getRoomDailyStates, updateRoomCleaningStatus } from '../api/client';
 import { RoomDailyState } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
+import { useLanguage } from '../i18n';
 
 export default function RoomStates() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
 
@@ -76,7 +78,7 @@ export default function RoomStates() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Estado de Habitaciones</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t.roomStates.title}</h2>
         <div className="flex items-center space-x-4">
           <input
             type="date"
@@ -92,31 +94,31 @@ export default function RoomStates() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="card text-center">
             <div className="text-2xl font-bold">{roomStates.length}</div>
-            <div className="text-sm text-gray-500">Total</div>
+            <div className="text-sm text-gray-500">{t.common.total}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">
               {roomStates.filter((r) => r.occupancy_status === 'OCCUPIED').length}
             </div>
-            <div className="text-sm text-gray-500">Ocupadas</div>
+            <div className="text-sm text-gray-500">{t.roomStates.occupied}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-orange-600">
               {roomStates.filter((r) => r.occupancy_status === 'CHECKOUT').length}
             </div>
-            <div className="text-sm text-gray-500">Checkout</div>
+            <div className="text-sm text-gray-500">{t.roomStates.checkout}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-green-600">
               {roomStates.filter((r) => r.day_cleaning_status === 'DONE').length}
             </div>
-            <div className="text-sm text-gray-500">Limpias</div>
+            <div className="text-sm text-gray-500">{t.common.clean}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-red-600">
               {roomStates.filter((r) => r.night_expected_difficulty === 'HARD').length}
             </div>
-            <div className="text-sm text-gray-500">Difíciles (noche)</div>
+            <div className="text-sm text-gray-500">{t.common.difficult} ({t.common.night})</div>
           </div>
         </div>
       )}
@@ -124,13 +126,13 @@ export default function RoomStates() {
       {/* Room States by Zone */}
       {isLoading ? (
         <div className="card">
-          <p className="text-gray-500">Cargando estados...</p>
+          <p className="text-gray-500">{t.common.loadingStates}</p>
         </div>
       ) : roomStates.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No hay datos para esta fecha</p>
+          <p className="text-gray-500">{t.roomStates.noData}</p>
           <p className="text-sm text-gray-400 mt-2">
-            Importa un CSV de Protel para ver los estados de las habitaciones
+            {t.roomStates.importCSV}
           </p>
         </div>
       ) : (
@@ -141,21 +143,21 @@ export default function RoomStates() {
                 <h3 className="text-lg font-semibold">
                   {states[0]?.zone_name || zoneCode}
                 </h3>
-                <span className="badge badge-info">{states.length} habitaciones</span>
+                <span className="badge badge-info">{states.length} {t.common.rooms}</span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="text-left p-2">Hab.</th>
-                      <th className="text-center p-2">Ocupación</th>
-                      <th className="text-center p-2">Día estancia</th>
-                      <th className="text-center p-2">Limpieza día</th>
-                      <th className="text-center p-2">Dificultad noche</th>
+                      <th className="text-left p-2">{t.roomStates.room}</th>
+                      <th className="text-center p-2">{t.roomStates.occupancyCol}</th>
+                      <th className="text-center p-2">{t.roomStates.stayDay}</th>
+                      <th className="text-center p-2">{t.roomStates.dayClean}</th>
+                      <th className="text-center p-2">{t.roomStates.nightDiff}</th>
                       <th className="text-center p-2">VIP</th>
-                      <th className="text-center p-2">Tareas</th>
-                      <th className="text-center p-2">Acción</th>
+                      <th className="text-center p-2">{t.common.tasks}</th>
+                      <th className="text-center p-2">{t.roomStates.action}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -207,7 +209,7 @@ export default function RoomStates() {
                                 className="text-green-600 hover:text-green-800 text-xs"
                                 disabled={updateMutation.isPending}
                               >
-                                Hecho
+                                {t.common.done}
                               </button>
                               <span className="text-gray-300">|</span>
                               <button
@@ -215,7 +217,7 @@ export default function RoomStates() {
                                 className="text-red-600 hover:text-red-800 text-xs"
                                 disabled={updateMutation.isPending}
                               >
-                                Rechazado
+                                {t.common.declined}
                               </button>
                             </div>
                           )}
