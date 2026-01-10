@@ -790,25 +790,33 @@ export default function WeeklyPlanning() {
 
                                       {/* Balance de horas */}
                                       {(day as any).hours_balance && (
-                                        <div className="px-3 py-2 bg-gray-100 border-t border-gray-200">
-                                          <div className="flex items-center gap-2 text-xs">
-                                            <span className="font-semibold text-gray-700">{t.weekly.legend.balance}:</span>
-                                            {(() => {
-                                              const balance = (day as any).hours_balance;
-                                              const spare = balance.total.spare;
-                                              const spareClass = spare >= 0 ? 'text-green-600' : 'text-red-600';
-                                              const spareIcon = spare >= 0 ? '✓' : '⚠';
-                                              return (
-                                                <>
-                                                  <span className="text-gray-600">
-                                                    {balance.total.assigned}h {t.weekly.legend.assignedHours} / {balance.total.needed}h {t.weekly.legend.neededHours}
-                                                  </span>
-                                                  <span className={`font-medium ${spareClass}`}>
-                                                    {spareIcon} {spare >= 0 ? '+' : ''}{spare}h
-                                                  </span>
-                                                </>
-                                              );
-                                            })()}
+                                        <div className={`px-3 py-2 border-t border-gray-200 ${(roomsDeficit > 0 || couvDeficitPersons > 0) ? 'bg-red-50' : 'bg-gray-100'}`}>
+                                          <div className="flex flex-col gap-1 text-xs">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-gray-700">{t.weekly.legend.balance}:</span>
+                                              {(() => {
+                                                const balance = (day as any).hours_balance;
+                                                const hasDeficit = roomsDeficit > 0 || couvDeficitPersons > 0;
+                                                const spareClass = hasDeficit ? 'text-red-600' : 'text-green-600';
+                                                const spareIcon = hasDeficit ? '⚠' : '✓';
+                                                return (
+                                                  <>
+                                                    <span className="text-gray-600">
+                                                      {balance.total.assigned}h {t.weekly.legend.assignedHours} / {balance.total.needed}h {t.weekly.legend.neededHours}
+                                                    </span>
+                                                    <span className={`font-medium ${spareClass}`}>
+                                                      {spareIcon} {!hasDeficit && balance.total.spare >= 0 ? '+' : ''}{balance.total.spare}h
+                                                    </span>
+                                                  </>
+                                                );
+                                              })()}
+                                            </div>
+                                            {(roomsDeficit > 0 || couvDeficitPersons > 0) && (
+                                              <div className="text-red-600 font-medium">
+                                                {roomsDeficit > 0 && <span>⚠ {roomsDeficit} hab. sin personal </span>}
+                                                {couvDeficitPersons > 0 && <span>⚠ Faltan {couvDeficitPersons} pers. para couvertures</span>}
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       )}
