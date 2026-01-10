@@ -104,11 +104,18 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:5173",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://zik.fm",
+    "http://zik.fm",
+    "https://www.zik.fm",
+    "https://api.zik.fm",
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework
 REST_FRAMEWORK = {
