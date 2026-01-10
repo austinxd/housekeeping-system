@@ -80,6 +80,31 @@ export const translations = {
         personsNeeded: 'Personas',
         recouch: 'recouch',
         couvertures: 'couvertures',
+        // Weekly summary
+        weeklySummary: 'Resumen Semanal de Horas',
+        contracted: 'Contratadas',
+        assigned: 'Asignadas',
+        needed: 'Necesarias (carga)',
+        spareDeficit: 'Sobra/Déficit',
+        byEmployee: 'Por empleado',
+        missing: 'faltan',
+        extra: 'extra',
+        // Daily distribution
+        dailyDistribution: 'Distribución del día',
+        rooms: 'hab',
+        couv: 'couv',
+        morningAlone: 'Mañana sola',
+        morningLunch: 'Almuerzo turno mañana',
+        morningEvening: 'Mañana + Tarde',
+        eveningFinishes: 'Tarde termina',
+        eveningLunch: 'Almuerzo turno tarde',
+        noPending: 'Sin pendientes',
+        pending: 'pendientes',
+        perPerson: 'c/u',
+        depart: 'depart',
+        balance: 'Balance',
+        assignedHours: 'asignadas',
+        neededHours: 'necesarias',
       },
     },
     // Days
@@ -181,6 +206,31 @@ export const translations = {
         personsNeeded: 'Personnes',
         recouch: 'recouche',
         couvertures: 'couvertures',
+        // Weekly summary
+        weeklySummary: 'Résumé Hebdomadaire des Heures',
+        contracted: 'Contractuelles',
+        assigned: 'Assignées',
+        needed: 'Nécessaires (charge)',
+        spareDeficit: 'Excédent/Déficit',
+        byEmployee: 'Par employé',
+        missing: 'manquent',
+        extra: 'extra',
+        // Daily distribution
+        dailyDistribution: 'Distribution de la journée',
+        rooms: 'ch',
+        couv: 'couv',
+        morningAlone: 'Matin seul',
+        morningLunch: 'Déjeuner équipe matin',
+        morningEvening: 'Matin + Soir',
+        eveningFinishes: 'Soir termine',
+        eveningLunch: 'Déjeuner équipe soir',
+        noPending: 'Sans attente',
+        pending: 'en attente',
+        perPerson: 'c/u',
+        depart: 'départ',
+        balance: 'Solde',
+        assignedHours: 'assignées',
+        neededHours: 'nécessaires',
       },
     },
     // Days
@@ -205,4 +255,9 @@ export const translations = {
   },
 } as const;
 
-export type TranslationKeys = typeof translations.es;
+// Use a more flexible type that allows different string values
+type DeepStringify<T> = {
+  [K in keyof T]: T[K] extends object ? DeepStringify<T[K]> : string;
+};
+
+export type TranslationKeys = DeepStringify<typeof translations.es>;

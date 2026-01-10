@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRoomDailyStates, updateRoomCleaningStatus } from '../api/client';
 import { RoomDailyState } from '../types';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { clsx } from 'clsx';
 
 export default function RoomStates() {

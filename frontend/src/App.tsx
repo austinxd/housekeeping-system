@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { LanguageProvider, useLanguage, Language } from './i18n';
+import { LanguageProvider, useLanguage } from './i18n';
 import Dashboard from './pages/Dashboard';
 import WeeklyPlanning from './pages/WeeklyPlanning';
 import DailyPlanning from './pages/DailyPlanning';

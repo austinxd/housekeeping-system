@@ -174,10 +174,23 @@ export default function WeeklyPlanning() {
     if (!shift || shift.is_day_off) return null;
 
     const colorClass = getShiftColor(shift.shift);
+    const startTime = shift.start_time?.slice(0, 5) || '09:00';
+    const endTime = shift.end_time?.slice(0, 5) || '17:00';
+    const hours = shift.hours || 8;
+
+    // Calcular hora de almuerzo (depende del turno)
+    const startHour = parseInt(startTime.split(':')[0]);
+    const lunchTime = startHour < 12 ? '12:30' : '18:30'; // Mañana: 12:30, Tarde: 18:30
 
     return (
-      <div className={`px-2 py-1 rounded border text-xs ${colorClass}`}>
-        <div className="font-medium">{shift.start_time} - {shift.end_time}</div>
+      <div className={`px-2 py-1.5 rounded border text-xs ${colorClass}`}>
+        <div className="font-semibold">{startTime}</div>
+        <div className="text-[10px] text-gray-500 flex items-center gap-1">
+          <span>🍽️</span>
+          <span>{lunchTime}</span>
+        </div>
+        <div className="text-[10px] opacity-75">{hours}h</div>
+        <div className="font-semibold">{endTime}</div>
       </div>
     );
   };
@@ -362,15 +375,15 @@ export default function WeeklyPlanning() {
                       </span>
                     </div>
                   </div>
-                  {selectedPlan.status === 'DRAFT' && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isPending}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-                      >
-                        {deleteMutation.isPending ? t.weekly.deleting : t.weekly.delete}
-                      </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+                    >
+                      {deleteMutation.isPending ? t.weekly.deleting : t.weekly.delete}
+                    </button>
+                    {selectedPlan.status === 'DRAFT' && (
                       <button
                         onClick={handlePublish}
                         disabled={publishMutation.isPending}
@@ -378,8 +391,8 @@ export default function WeeklyPlanning() {
                       >
                         {publishMutation.isPending ? t.weekly.publishing : t.weekly.publish}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -466,6 +479,45 @@ export default function WeeklyPlanning() {
                       ({t.weekly.legend.morning}: {loadExplanation.totals.day_shift_hours}h, {t.weekly.legend.evening}: {loadExplanation.totals.evening_shift_hours}h)
                     </p>
                   </div>
+
+                  {/* Resumen semanal de horas */}
+                  {(loadExplanation as any).weekly_summary && (
+                    <div className="p-4 bg-blue-50 border-b">
+                      <h5 className="font-semibold text-blue-800 mb-3">Resumen Semanal de Horas</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="text-xs text-gray-500">Contratadas</div>
+                          <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.contracted}h</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="text-xs text-gray-500">Asignadas</div>
+                          <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.assigned}h</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="text-xs text-gray-500">Necesarias (carga)</div>
+                          <div className="font-bold text-lg">{(loadExplanation as any).weekly_summary.totals.needed}h</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="text-xs text-gray-500">Sobra/Déficit</div>
+                          <div className={`font-bold text-lg ${(loadExplanation as any).weekly_summary.totals.assigned_vs_needed >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(loadExplanation as any).weekly_summary.totals.assigned_vs_needed >= 0 ? '+' : ''}
+                            {(loadExplanation as any).weekly_summary.totals.assigned_vs_needed}h
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-blue-700">
+                        <span className="font-medium">Por empleado: </span>
+                        {(loadExplanation as any).weekly_summary.employees.map((emp: any, idx: number) => (
+                          <span key={idx}>
+                            {emp.name.split(' ')[0]}: {emp.assigned}h/{emp.contracted}h
+                            {emp.pending !== 0 && <span className={emp.pending > 0 ? 'text-yellow-600' : 'text-green-600'}> ({emp.pending > 0 ? 'faltan' : 'extra'} {Math.abs(emp.pending)}h)</span>}
+                            {idx < (loadExplanation as any).weekly_summary.employees.length - 1 && ' · '}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="divide-y">
                     {loadExplanation.days.map((day, index) => {
                       const stays = Math.max(0, day.forecast.occupied - day.forecast.arrivals);
@@ -505,28 +557,60 @@ export default function WeeklyPlanning() {
                                 const totalRooms = departures + stays;
                                 const occupied = day.forecast.occupied;
 
-                                // Parejas por período
+                                // Tiempos de tareas (en minutos)
+                                const DEPART_MIN = 50;
+                                const RECOUCH_MIN = 20;
+                                const COUV_MIN = 20;
+
+                                // Horas disponibles por período
+                                const P1_HOURS = 3.5; // 09:00-12:30
+                                const P2_HOURS = 3.5; // 13:30-17:00
+                                const P3_HOURS = 1.5; // 17:00-18:30
+                                const COUV_HOURS = 2.5; // 19:00-21:30
+
+                                // P1: Mañana sola (09:00-12:30)
+                                const p1Available = numDay * P1_HOURS * 60; // minutos disponibles
+                                const p1Needed = (departures * DEPART_MIN + stays * RECOUCH_MIN) * 0.4; // ~40% del trabajo
+                                const p1Balance = (p1Available - p1Needed) / 60;
+
+                                // P2: Mañana + Tarde (13:30-17:00)
+                                const p2Available = (numDay + numEvening) * P2_HOURS * 60;
+                                const p2Needed = (departures * DEPART_MIN + stays * RECOUCH_MIN) * 0.5; // ~50% del trabajo
+                                const p2Balance = (p2Available - p2Needed) / 60;
+
+                                // P3: Tarde sola termina (17:00-18:30)
+                                const p3Available = numEvening * P3_HOURS * 60;
+                                const p3Needed = (departures * DEPART_MIN + stays * RECOUCH_MIN) * 0.1; // ~10% restante
+                                const p3Balance = (p3Available - p3Needed) / 60;
+
+                                // Couverture (19:00-21:30)
+                                const couvAvailable = numEvening * COUV_HOURS * 60;
+                                const couvNeeded = occupied * COUV_MIN;
+                                const couvBalance = (couvAvailable - couvNeeded) / 60;
+
+                                // Función para mostrar balance
+                                const renderBalance = (balance: number) => {
+                                  const isPositive = balance >= 0;
+                                  return (
+                                    <span className={`text-[10px] font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                      {isPositive ? '✓' : '⚠'} {isPositive ? '+' : ''}{balance.toFixed(1)}h
+                                    </span>
+                                  );
+                                };
+
+                                // Cálculos de habitaciones por período (estimación)
                                 const pairsP1 = Math.max(1, Math.floor(numDay / 2));
                                 const pairsP2 = Math.max(1, Math.floor((numDay + numEvening) / 2));
-                                const pairsP3 = Math.max(1, Math.floor(numEvening / 2));
-
-                                // Capacidad: DEPART 50min, RECOUCH 20min
                                 const departsPerHour = 1.2;
                                 const recouchPerHour = 3;
-
-                                // P1: 09:00-12:30 (3.5h)
-                                const departsDoneP1 = Math.min(departures, Math.floor(pairsP1 * 3.5 * departsPerHour));
-                                const hoursLeftP1 = 3.5 - (departsDoneP1 / departsPerHour / pairsP1);
+                                const departsDoneP1 = Math.min(departures, Math.floor(pairsP1 * P1_HOURS * departsPerHour));
+                                const hoursLeftP1 = P1_HOURS - (departsDoneP1 / departsPerHour / pairsP1);
                                 const recouchDoneP1 = Math.min(stays, Math.floor(pairsP1 * hoursLeftP1 * recouchPerHour));
-
-                                // P2: 13:30-17:00 (3.5h)
                                 const departsLeft = departures - departsDoneP1;
                                 const recouchLeft = stays - recouchDoneP1;
-                                const departsDoneP2 = Math.min(departsLeft, Math.floor(pairsP2 * 3.5 * departsPerHour));
-                                const hoursLeftP2 = 3.5 - (departsDoneP2 / departsPerHour / pairsP2);
+                                const departsDoneP2 = Math.min(departsLeft, Math.floor(pairsP2 * P2_HOURS * departsPerHour));
+                                const hoursLeftP2 = P2_HOURS - (departsDoneP2 / departsPerHour / pairsP2);
                                 const recouchDoneP2 = Math.min(recouchLeft, Math.floor(pairsP2 * hoursLeftP2 * recouchPerHour));
-
-                                // P3: 17:00-19:00 (2h)
                                 const recouchLeftP3 = Math.max(0, stays - recouchDoneP1 - recouchDoneP2);
 
                                 const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
@@ -543,13 +627,16 @@ export default function WeeklyPlanning() {
                                     </div>
 
                                     <div className="divide-y divide-gray-100">
-                                      {/* Período 1 */}
+                                      {/* Período 1: Mañana sola */}
                                       <div className="px-3 py-2 flex items-start gap-3">
                                         <div className="text-lg">🌅</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
-                                            <span className="text-xs text-gray-500">Mañana sola</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Mañana sola</span>
+                                              {renderBalance(p1Balance)}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP1 + recouchDoneP1} hab</span>
@@ -560,19 +647,22 @@ export default function WeeklyPlanning() {
                                         </div>
                                       </div>
 
-                                      {/* Almuerzo */}
+                                      {/* Almuerzo Mañana */}
                                       <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
                                         <div className="text-base">🍽️</div>
-                                        <span className="text-xs text-gray-500">12:30 - 13:30 Almuerzo</span>
+                                        <span className="text-xs text-gray-500">12:30 - 13:30 Almuerzo turno mañana</span>
                                       </div>
 
-                                      {/* Período 2 */}
+                                      {/* Período 2: Mañana + Tarde */}
                                       <div className="px-3 py-2 flex items-start gap-3">
                                         <div className="text-lg">🔄</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
-                                            <span className="text-xs text-gray-500">Mañana + Tarde</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Mañana + Tarde</span>
+                                              {renderBalance(p2Balance)}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP2 + recouchDoneP2} hab</span>
@@ -587,15 +677,32 @@ export default function WeeklyPlanning() {
                                         </div>
                                       </div>
 
-                                      {/* Período 3 - solo si hay pendientes */}
-                                      {recouchLeftP3 > 0 && (
-                                        <div className="px-3 py-1.5 bg-yellow-50 flex items-center gap-3">
-                                          <div className="text-base">⏰</div>
-                                          <div className="text-xs text-yellow-700">
-                                            17:00 - 19:00 Tarde termina <span className="font-medium">{recouchLeftP3} recouch</span>
+                                      {/* Período 3: Tarde termina limpieza */}
+                                      <div className="px-3 py-2 flex items-start gap-3">
+                                        <div className="text-lg">⏰</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-baseline justify-between">
+                                            <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Tarde termina</span>
+                                              {renderBalance(p3Balance)}
+                                            </div>
                                           </div>
+                                          <div className="text-xs text-gray-600 mt-0.5">
+                                            {recouchLeftP3 > 0
+                                              ? <span className="font-medium">{recouchLeftP3} recouch pendientes</span>
+                                              : <span className="text-green-600">Sin pendientes</span>
+                                            }
+                                          </div>
+                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
                                         </div>
-                                      )}
+                                      </div>
+
+                                      {/* Almuerzo Tarde */}
+                                      <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
+                                        <div className="text-base">🍽️</div>
+                                        <span className="text-xs text-gray-500">18:30 - 19:00 Almuerzo turno tarde</span>
+                                      </div>
 
                                       {/* Couverture */}
                                       <div className="px-3 py-2 flex items-start gap-3 bg-orange-50">
@@ -603,7 +710,10 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-orange-700 text-sm">19:00 - 21:30</span>
-                                            <span className="text-xs text-gray-500">Couverture</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Couverture</span>
+                                              {renderBalance(couvBalance)}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{occupied} couvertures</span>
@@ -612,6 +722,31 @@ export default function WeeklyPlanning() {
                                           {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
                                         </div>
                                       </div>
+
+                                      {/* Balance de horas */}
+                                      {(day as any).hours_balance && (
+                                        <div className="px-3 py-2 bg-gray-100 border-t border-gray-200">
+                                          <div className="flex items-center gap-2 text-xs">
+                                            <span className="font-semibold text-gray-700">Balance:</span>
+                                            {(() => {
+                                              const balance = (day as any).hours_balance;
+                                              const spare = balance.total.spare;
+                                              const spareClass = spare >= 0 ? 'text-green-600' : 'text-red-600';
+                                              const spareIcon = spare >= 0 ? '✓' : '⚠';
+                                              return (
+                                                <>
+                                                  <span className="text-gray-600">
+                                                    {balance.total.assigned}h asignadas / {balance.total.needed}h necesarias
+                                                  </span>
+                                                  <span className={`font-medium ${spareClass}`}>
+                                                    {spareIcon} {spare >= 0 ? '+' : ''}{spare}h
+                                                  </span>
+                                                </>
+                                              );
+                                            })()}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 );

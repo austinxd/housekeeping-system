@@ -24,7 +24,7 @@ export default function DailyPlanning() {
     queryFn: getDailyPlans,
   });
 
-  const { data: selectedPlan, isLoading: loadingPlan } = useQuery({
+  const { data: selectedPlan } = useQuery({
     queryKey: ['dailyPlan', selectedPlanId],
     queryFn: () => getDailyPlan(selectedPlanId!),
     enabled: !!selectedPlanId,

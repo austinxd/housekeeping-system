@@ -1,0 +1,4299 @@
+[
+{
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2026-01-10T03:15:28.206Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "7",
+    "object_repr": "Ingrid PICAULT (GG)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 2,
+  "fields": {
+    "action_time": "2026-01-10T03:15:38.828Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "7",
+    "object_repr": "Ingrid PICAULT (GG)",
+    "action_flag": 2,
+    "change_message": "[]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 3,
+  "fields": {
+    "action_time": "2026-01-10T03:16:15.701Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "8",
+    "object_repr": "Steffi MONIT (ASST_GG)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 4,
+  "fields": {
+    "action_time": "2026-01-10T03:16:32.917Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "9",
+    "object_repr": "Chertande LEONARD (GOUV_SOIR)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 5,
+  "fields": {
+    "action_time": "2026-01-10T03:16:57.517Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "10",
+    "object_repr": "Dorian PERRIER (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 6,
+  "fields": {
+    "action_time": "2026-01-10T03:17:39.713Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "11",
+    "object_repr": "Cynthia ROMERO (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 7,
+  "fields": {
+    "action_time": "2026-01-10T03:18:37.017Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "13",
+    "object_repr": "Gabriela CANADA (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 8,
+  "fields": {
+    "action_time": "2026-01-10T03:19:10.335Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "15",
+    "object_repr": "Inés LE BAIL (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 9,
+  "fields": {
+    "action_time": "2026-01-10T03:20:16.537Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "16",
+    "object_repr": "Christopher LADHUIE (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 10,
+  "fields": {
+    "action_time": "2026-01-10T03:22:48.724Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "24",
+    "object_repr": "Romain LEGEARD (EQUIPIER_NUIT)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 11,
+  "fields": {
+    "action_time": "2026-01-10T03:23:09.700Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "23",
+    "object_repr": "Philippe CABANEAU (EQUIPIER_NUIT)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 12,
+  "fields": {
+    "action_time": "2026-01-10T03:23:44.395Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "20",
+    "object_repr": "Benjamin GUILLARD (EQUIPIER_JOUR)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 13,
+  "fields": {
+    "action_time": "2026-01-10T03:24:36.175Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "22",
+    "object_repr": "Sebastien CAMESCASSE (EQUIPIER_JOUR)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 14,
+  "fields": {
+    "action_time": "2026-01-10T03:25:06.646Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "12",
+    "object_repr": "Marion VIDAL (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 15,
+  "fields": {
+    "action_time": "2026-01-10T03:25:57.441Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "19",
+    "object_repr": "Irina ZINCHENKO (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 16,
+  "fields": {
+    "action_time": "2026-01-10T03:26:23.168Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "18",
+    "object_repr": "Augusto TANTALEAN (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 17,
+  "fields": {
+    "action_time": "2026-01-10T03:27:00.151Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "17",
+    "object_repr": "Adrian WHITE (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 18,
+  "fields": {
+    "action_time": "2026-01-10T03:28:18.944Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "21",
+    "object_repr": "Quentin MAILLE (EQUIPIER_JOUR)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 19,
+  "fields": {
+    "action_time": "2026-01-10T03:29:32.289Z",
+    "user": 1,
+    "content_type": 16,
+    "object_id": "2",
+    "object_repr": "Francisco + Gabriela (Fija - Siempre juntas)",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 20,
+  "fields": {
+    "action_time": "2026-01-10T03:29:50.689Z",
+    "user": 1,
+    "content_type": 16,
+    "object_id": "3",
+    "object_repr": "Inés + Dorian (Fija - Siempre juntas)",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 21,
+  "fields": {
+    "action_time": "2026-01-10T03:38:29.814Z",
+    "user": 1,
+    "content_type": 8,
+    "object_id": "1",
+    "object_repr": "DEPART - Salida",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Base minutes\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 22,
+  "fields": {
+    "action_time": "2026-01-10T03:38:42.511Z",
+    "user": 1,
+    "content_type": 8,
+    "object_id": "2",
+    "object_repr": "RECOUCH - Recouch",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Base minutes\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 23,
+  "fields": {
+    "action_time": "2026-01-10T03:38:42.512Z",
+    "user": 1,
+    "content_type": 8,
+    "object_id": "5",
+    "object_repr": "COUVERTURE - Couverture",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Base minutes\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 24,
+  "fields": {
+    "action_time": "2026-01-10T03:49:18.380Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "14",
+    "object_repr": "Francisco BLANCO (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Role\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 25,
+  "fields": {
+    "action_time": "2026-01-10T03:49:40.966Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "15",
+    "object_repr": "Inés LE BAIL (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Role\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 26,
+  "fields": {
+    "action_time": "2026-01-10T03:50:18.581Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "10",
+    "object_repr": "Dorian PERRIER (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Role\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 27,
+  "fields": {
+    "action_time": "2026-01-10T03:50:57.969Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "19",
+    "object_repr": "Irina ZINCHENKO (FDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Role\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 28,
+  "fields": {
+    "action_time": "2026-01-10T04:34:01.805Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "18",
+    "object_repr": "Augusto TANTALEAN (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Allowed blocks\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 29,
+  "fields": {
+    "action_time": "2026-01-10T04:37:14.671Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "18",
+    "object_repr": "Augusto TANTALEAN (VDC)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Fixed days off\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 30,
+  "fields": {
+    "action_time": "2026-01-10T04:43:26.256Z",
+    "user": 1,
+    "content_type": 15,
+    "object_id": "18",
+    "object_repr": "Augusto TANTALEAN (VDC)",
+    "action_flag": 2,
+    "change_message": "[]"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 2,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 2,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 2,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 2,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 3,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 3,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 3,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 3,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 4,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 4,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 4,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 4,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 5,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 5,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 5,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 5,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 6,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 6,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 6,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 6,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add Bloque Temporal",
+    "content_type": 7,
+    "codename": "add_timeblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change Bloque Temporal",
+    "content_type": 7,
+    "codename": "change_timeblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete Bloque Temporal",
+    "content_type": 7,
+    "codename": "delete_timeblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view Bloque Temporal",
+    "content_type": 7,
+    "codename": "view_timeblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add Tipo de Tarea",
+    "content_type": 8,
+    "codename": "add_tasktype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change Tipo de Tarea",
+    "content_type": 8,
+    "codename": "change_tasktype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete Tipo de Tarea",
+    "content_type": 8,
+    "codename": "delete_tasktype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view Tipo de Tarea",
+    "content_type": 8,
+    "codename": "view_tasktype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add Edificio",
+    "content_type": 9,
+    "codename": "add_building"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change Edificio",
+    "content_type": 9,
+    "codename": "change_building"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete Edificio",
+    "content_type": 9,
+    "codename": "delete_building"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view Edificio",
+    "content_type": 9,
+    "codename": "view_building"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add Zona",
+    "content_type": 10,
+    "codename": "add_zone"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change Zona",
+    "content_type": 10,
+    "codename": "change_zone"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete Zona",
+    "content_type": 10,
+    "codename": "delete_zone"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view Zona",
+    "content_type": 10,
+    "codename": "view_zone"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add Tipo de Habitación",
+    "content_type": 11,
+    "codename": "add_roomtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change Tipo de Habitación",
+    "content_type": 11,
+    "codename": "change_roomtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete Tipo de Habitación",
+    "content_type": 11,
+    "codename": "delete_roomtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view Tipo de Habitación",
+    "content_type": 11,
+    "codename": "view_roomtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add Habitación",
+    "content_type": 12,
+    "codename": "add_room"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change Habitación",
+    "content_type": 12,
+    "codename": "change_room"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete Habitación",
+    "content_type": 12,
+    "codename": "delete_room"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view Habitación",
+    "content_type": 12,
+    "codename": "view_room"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add Día de la Semana",
+    "content_type": 13,
+    "codename": "add_dayofweek"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change Día de la Semana",
+    "content_type": 13,
+    "codename": "change_dayofweek"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete Día de la Semana",
+    "content_type": 13,
+    "codename": "delete_dayofweek"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view Día de la Semana",
+    "content_type": 13,
+    "codename": "view_dayofweek"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 53,
+  "fields": {
+    "name": "Can add Rol",
+    "content_type": 14,
+    "codename": "add_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 54,
+  "fields": {
+    "name": "Can change Rol",
+    "content_type": 14,
+    "codename": "change_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 55,
+  "fields": {
+    "name": "Can delete Rol",
+    "content_type": 14,
+    "codename": "delete_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 56,
+  "fields": {
+    "name": "Can view Rol",
+    "content_type": 14,
+    "codename": "view_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 57,
+  "fields": {
+    "name": "Can add Empleado",
+    "content_type": 15,
+    "codename": "add_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 58,
+  "fields": {
+    "name": "Can change Empleado",
+    "content_type": 15,
+    "codename": "change_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 59,
+  "fields": {
+    "name": "Can delete Empleado",
+    "content_type": 15,
+    "codename": "delete_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 60,
+  "fields": {
+    "name": "Can view Empleado",
+    "content_type": 15,
+    "codename": "view_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 61,
+  "fields": {
+    "name": "Can add Equipo/Pareja",
+    "content_type": 16,
+    "codename": "add_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 62,
+  "fields": {
+    "name": "Can change Equipo/Pareja",
+    "content_type": 16,
+    "codename": "change_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 63,
+  "fields": {
+    "name": "Can delete Equipo/Pareja",
+    "content_type": 16,
+    "codename": "delete_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 64,
+  "fields": {
+    "name": "Can view Equipo/Pareja",
+    "content_type": 16,
+    "codename": "view_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 65,
+  "fields": {
+    "name": "Can add Indisponibilidad",
+    "content_type": 17,
+    "codename": "add_employeeunavailability"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 66,
+  "fields": {
+    "name": "Can change Indisponibilidad",
+    "content_type": 17,
+    "codename": "change_employeeunavailability"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 67,
+  "fields": {
+    "name": "Can delete Indisponibilidad",
+    "content_type": 17,
+    "codename": "delete_employeeunavailability"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 68,
+  "fields": {
+    "name": "Can view Indisponibilidad",
+    "content_type": 17,
+    "codename": "view_employeeunavailability"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 69,
+  "fields": {
+    "name": "Can add Plantilla de Turno",
+    "content_type": 18,
+    "codename": "add_shifttemplate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 70,
+  "fields": {
+    "name": "Can change Plantilla de Turno",
+    "content_type": 18,
+    "codename": "change_shifttemplate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 71,
+  "fields": {
+    "name": "Can delete Plantilla de Turno",
+    "content_type": 18,
+    "codename": "delete_shifttemplate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 72,
+  "fields": {
+    "name": "Can view Plantilla de Turno",
+    "content_type": 18,
+    "codename": "view_shifttemplate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 73,
+  "fields": {
+    "name": "Can add Sub-bloque de Turno",
+    "content_type": 19,
+    "codename": "add_shiftsubblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 74,
+  "fields": {
+    "name": "Can change Sub-bloque de Turno",
+    "content_type": 19,
+    "codename": "change_shiftsubblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 75,
+  "fields": {
+    "name": "Can delete Sub-bloque de Turno",
+    "content_type": 19,
+    "codename": "delete_shiftsubblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 76,
+  "fields": {
+    "name": "Can view Sub-bloque de Turno",
+    "content_type": 19,
+    "codename": "view_shiftsubblock"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 77,
+  "fields": {
+    "name": "Can add Estado Diario de Habitación",
+    "content_type": 20,
+    "codename": "add_roomdailystate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 78,
+  "fields": {
+    "name": "Can change Estado Diario de Habitación",
+    "content_type": 20,
+    "codename": "change_roomdailystate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 79,
+  "fields": {
+    "name": "Can delete Estado Diario de Habitación",
+    "content_type": 20,
+    "codename": "delete_roomdailystate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 80,
+  "fields": {
+    "name": "Can view Estado Diario de Habitación",
+    "content_type": 20,
+    "codename": "view_roomdailystate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 81,
+  "fields": {
+    "name": "Can add Tarea de Habitación",
+    "content_type": 21,
+    "codename": "add_roomdailytask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 82,
+  "fields": {
+    "name": "Can change Tarea de Habitación",
+    "content_type": 21,
+    "codename": "change_roomdailytask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 83,
+  "fields": {
+    "name": "Can delete Tarea de Habitación",
+    "content_type": 21,
+    "codename": "delete_roomdailytask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 84,
+  "fields": {
+    "name": "Can view Tarea de Habitación",
+    "content_type": 21,
+    "codename": "view_roomdailytask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 85,
+  "fields": {
+    "name": "Can add Log de Importación Protel",
+    "content_type": 22,
+    "codename": "add_protelimportlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 86,
+  "fields": {
+    "name": "Can change Log de Importación Protel",
+    "content_type": 22,
+    "codename": "change_protelimportlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 87,
+  "fields": {
+    "name": "Can delete Log de Importación Protel",
+    "content_type": 22,
+    "codename": "delete_protelimportlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 88,
+  "fields": {
+    "name": "Can view Log de Importación Protel",
+    "content_type": 22,
+    "codename": "view_protelimportlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 89,
+  "fields": {
+    "name": "Can add Regla de Tiempo",
+    "content_type": 23,
+    "codename": "add_tasktimerule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 90,
+  "fields": {
+    "name": "Can change Regla de Tiempo",
+    "content_type": 23,
+    "codename": "change_tasktimerule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 91,
+  "fields": {
+    "name": "Can delete Regla de Tiempo",
+    "content_type": 23,
+    "codename": "delete_tasktimerule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 92,
+  "fields": {
+    "name": "Can view Regla de Tiempo",
+    "content_type": 23,
+    "codename": "view_tasktimerule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 93,
+  "fields": {
+    "name": "Can add Regla de Asignación de Zona",
+    "content_type": 24,
+    "codename": "add_zoneassignmentrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 94,
+  "fields": {
+    "name": "Can change Regla de Asignación de Zona",
+    "content_type": 24,
+    "codename": "change_zoneassignmentrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 95,
+  "fields": {
+    "name": "Can delete Regla de Asignación de Zona",
+    "content_type": 24,
+    "codename": "delete_zoneassignmentrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 96,
+  "fields": {
+    "name": "Can view Regla de Asignación de Zona",
+    "content_type": 24,
+    "codename": "view_zoneassignmentrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 97,
+  "fields": {
+    "name": "Can add Regla de Elasticidad",
+    "content_type": 25,
+    "codename": "add_elasticityrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 98,
+  "fields": {
+    "name": "Can change Regla de Elasticidad",
+    "content_type": 25,
+    "codename": "change_elasticityrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 99,
+  "fields": {
+    "name": "Can delete Regla de Elasticidad",
+    "content_type": 25,
+    "codename": "delete_elasticityrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 100,
+  "fields": {
+    "name": "Can view Regla de Elasticidad",
+    "content_type": 25,
+    "codename": "view_elasticityrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 101,
+  "fields": {
+    "name": "Can add Parámetro de Planificación",
+    "content_type": 26,
+    "codename": "add_planningparameter"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 102,
+  "fields": {
+    "name": "Can change Parámetro de Planificación",
+    "content_type": 26,
+    "codename": "change_planningparameter"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 103,
+  "fields": {
+    "name": "Can delete Parámetro de Planificación",
+    "content_type": 26,
+    "codename": "delete_planningparameter"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 104,
+  "fields": {
+    "name": "Can view Parámetro de Planificación",
+    "content_type": 26,
+    "codename": "view_planningparameter"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 105,
+  "fields": {
+    "name": "Can add Plan Semanal",
+    "content_type": 27,
+    "codename": "add_weekplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 106,
+  "fields": {
+    "name": "Can change Plan Semanal",
+    "content_type": 27,
+    "codename": "change_weekplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 107,
+  "fields": {
+    "name": "Can delete Plan Semanal",
+    "content_type": 27,
+    "codename": "delete_weekplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 108,
+  "fields": {
+    "name": "Can view Plan Semanal",
+    "content_type": 27,
+    "codename": "view_weekplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 109,
+  "fields": {
+    "name": "Can add Asignación de Turno",
+    "content_type": 28,
+    "codename": "add_shiftassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 110,
+  "fields": {
+    "name": "Can change Asignación de Turno",
+    "content_type": 28,
+    "codename": "change_shiftassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 111,
+  "fields": {
+    "name": "Can delete Asignación de Turno",
+    "content_type": 28,
+    "codename": "delete_shiftassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 112,
+  "fields": {
+    "name": "Can view Asignación de Turno",
+    "content_type": 28,
+    "codename": "view_shiftassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 113,
+  "fields": {
+    "name": "Can add Plan Diario",
+    "content_type": 29,
+    "codename": "add_dailyplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 114,
+  "fields": {
+    "name": "Can change Plan Diario",
+    "content_type": 29,
+    "codename": "change_dailyplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 115,
+  "fields": {
+    "name": "Can delete Plan Diario",
+    "content_type": 29,
+    "codename": "delete_dailyplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 116,
+  "fields": {
+    "name": "Can view Plan Diario",
+    "content_type": 29,
+    "codename": "view_dailyplan"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 117,
+  "fields": {
+    "name": "Can add Asignación de Tarea",
+    "content_type": 30,
+    "codename": "add_taskassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 118,
+  "fields": {
+    "name": "Can change Asignación de Tarea",
+    "content_type": 30,
+    "codename": "change_taskassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 119,
+  "fields": {
+    "name": "Can delete Asignación de Tarea",
+    "content_type": 30,
+    "codename": "delete_taskassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 120,
+  "fields": {
+    "name": "Can view Asignación de Tarea",
+    "content_type": 30,
+    "codename": "view_taskassignment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 121,
+  "fields": {
+    "name": "Can add Resumen de Carga Diaria",
+    "content_type": 31,
+    "codename": "add_dailyloadsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 122,
+  "fields": {
+    "name": "Can change Resumen de Carga Diaria",
+    "content_type": 31,
+    "codename": "change_dailyloadsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 123,
+  "fields": {
+    "name": "Can delete Resumen de Carga Diaria",
+    "content_type": 31,
+    "codename": "delete_dailyloadsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 124,
+  "fields": {
+    "name": "Can view Resumen de Carga Diaria",
+    "content_type": 31,
+    "codename": "view_dailyloadsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 125,
+  "fields": {
+    "name": "Can add Alerta de Planificación",
+    "content_type": 32,
+    "codename": "add_planningalert"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 126,
+  "fields": {
+    "name": "Can change Alerta de Planificación",
+    "content_type": 32,
+    "codename": "change_planningalert"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 127,
+  "fields": {
+    "name": "Can delete Alerta de Planificación",
+    "content_type": 32,
+    "codename": "delete_planningalert"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 128,
+  "fields": {
+    "name": "Can view Alerta de Planificación",
+    "content_type": 32,
+    "codename": "view_planningalert"
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$aOhVXF1o3aqChuZTVebUco$xI9fomKP9NSSJfdFYzSEEHDizZc1x24lwcb7W03Pbng=",
+    "last_login": "2026-01-08T11:05:08.382Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-01-08T11:03:29.821Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "auth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "core",
+    "model": "timeblock"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "core",
+    "model": "tasktype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "core",
+    "model": "building"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "core",
+    "model": "zone"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "core",
+    "model": "roomtype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "core",
+    "model": "room"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "core",
+    "model": "dayofweek"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "staff",
+    "model": "role"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "staff",
+    "model": "employee"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 16,
+  "fields": {
+    "app_label": "staff",
+    "model": "team"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 17,
+  "fields": {
+    "app_label": "staff",
+    "model": "employeeunavailability"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 18,
+  "fields": {
+    "app_label": "shifts",
+    "model": "shifttemplate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 19,
+  "fields": {
+    "app_label": "shifts",
+    "model": "shiftsubblock"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 20,
+  "fields": {
+    "app_label": "rooms",
+    "model": "roomdailystate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 21,
+  "fields": {
+    "app_label": "rooms",
+    "model": "roomdailytask"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 22,
+  "fields": {
+    "app_label": "rooms",
+    "model": "protelimportlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 23,
+  "fields": {
+    "app_label": "rules",
+    "model": "tasktimerule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 24,
+  "fields": {
+    "app_label": "rules",
+    "model": "zoneassignmentrule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 25,
+  "fields": {
+    "app_label": "rules",
+    "model": "elasticityrule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 26,
+  "fields": {
+    "app_label": "rules",
+    "model": "planningparameter"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 27,
+  "fields": {
+    "app_label": "planning",
+    "model": "weekplan"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 28,
+  "fields": {
+    "app_label": "planning",
+    "model": "shiftassignment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 29,
+  "fields": {
+    "app_label": "planning",
+    "model": "dailyplan"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 30,
+  "fields": {
+    "app_label": "planning",
+    "model": "taskassignment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 31,
+  "fields": {
+    "app_label": "planning",
+    "model": "dailyloadsummary"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 32,
+  "fields": {
+    "app_label": "planning",
+    "model": "planningalert"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "jo4dpp2a7o95diz7vo88tz88vn3hqs9b",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQRO_iGlnxh_Wakp4zWOu1gwPIkeKkQtwdR0oBxTTz3sxbBNrWEraWlzAlcRFKnH67SPzMdQfpQfU-S57rukxR7oo8aJO3OeXX9XD_Dgq10tfaUgJvEqPKPdEOQIjWjOA0UOyMGRC9PxvHzhsHIxGbwTpUGFmLzxfW9jdh:1vdnpE:cNhW-MDMpZbd58_hlMQ9vMyl1v7NQUfIvMi55YTpCvU",
+    "expire_date": "2026-01-22T11:05:08.383Z"
+  }
+},
+{
+  "model": "core.timeblock",
+  "pk": 1,
+  "fields": {
+    "code": "DAY",
+    "name": "Mañana / Producción",
+    "description": "Bloque de limpieza principal (mañana)",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "order": 1,
+    "min_staff": 2,
+    "helps_other_shift_hours": "0.0",
+    "is_active": true
+  }
+},
+{
+  "model": "core.timeblock",
+  "pk": 2,
+  "fields": {
+    "code": "EVENING",
+    "name": "Tarde + Couverture",
+    "description": "Bloque de tarde incluyendo couverture",
+    "start_time": "14:00:00",
+    "end_time": "22:30:00",
+    "order": 2,
+    "min_staff": 2,
+    "helps_other_shift_hours": "4.5",
+    "is_active": true
+  }
+},
+{
+  "model": "core.timeblock",
+  "pk": 3,
+  "fields": {
+    "code": "NIGHT",
+    "name": "Noche",
+    "description": "Bloque nocturno (équipier de nuit)",
+    "start_time": null,
+    "end_time": null,
+    "order": 3,
+    "min_staff": 2,
+    "helps_other_shift_hours": "0.0",
+    "is_active": true
+  }
+},
+{
+  "model": "core.tasktype",
+  "pk": 1,
+  "fields": {
+    "code": "DEPART",
+    "name": "Salida",
+    "description": "Limpieza completa por checkout",
+    "base_minutes": 50,
+    "persons_required": 2,
+    "earliest_start_time": "09:00:00",
+    "latest_end_time": "18:30:00",
+    "priority": 10,
+    "is_active": true,
+    "allowed_blocks": [
+      1
+    ]
+  }
+},
+{
+  "model": "core.tasktype",
+  "pk": 2,
+  "fields": {
+    "code": "RECOUCH",
+    "name": "Recouch",
+    "description": "Limpieza de habitación ocupada",
+    "base_minutes": 20,
+    "persons_required": 2,
+    "earliest_start_time": "09:00:00",
+    "latest_end_time": "18:30:00",
+    "priority": 30,
+    "is_active": true,
+    "allowed_blocks": [
+      1
+    ]
+  }
+},
+{
+  "model": "core.tasktype",
+  "pk": 5,
+  "fields": {
+    "code": "COUVERTURE",
+    "name": "Couverture",
+    "description": "Servicio de cobertura nocturno",
+    "base_minutes": 20,
+    "persons_required": 1,
+    "earliest_start_time": "19:00:00",
+    "latest_end_time": "22:30:00",
+    "priority": 40,
+    "is_active": true,
+    "allowed_blocks": [
+      2
+    ]
+  }
+},
+{
+  "model": "core.building",
+  "pk": 1,
+  "fields": {
+    "code": "MAIN",
+    "name": "Edificio Principal",
+    "is_active": true
+  }
+},
+{
+  "model": "core.zone",
+  "pk": 1,
+  "fields": {
+    "code": "P2",
+    "name": "Piso 2",
+    "building": 1,
+    "floor_number": 2,
+    "priority_order": 1,
+    "is_active": true
+  }
+},
+{
+  "model": "core.zone",
+  "pk": 2,
+  "fields": {
+    "code": "P3",
+    "name": "Piso 3",
+    "building": 1,
+    "floor_number": 3,
+    "priority_order": 2,
+    "is_active": true
+  }
+},
+{
+  "model": "core.zone",
+  "pk": 3,
+  "fields": {
+    "code": "P4",
+    "name": "Piso 4",
+    "building": 1,
+    "floor_number": 4,
+    "priority_order": 3,
+    "is_active": true
+  }
+},
+{
+  "model": "core.zone",
+  "pk": 4,
+  "fields": {
+    "code": "P5",
+    "name": "Piso 5",
+    "building": 1,
+    "floor_number": 5,
+    "priority_order": 4,
+    "is_active": true
+  }
+},
+{
+  "model": "core.roomtype",
+  "pk": 1,
+  "fields": {
+    "code": "STANDARD",
+    "name": "Standard",
+    "time_multiplier": "1.00",
+    "is_active": true
+  }
+},
+{
+  "model": "core.roomtype",
+  "pk": 2,
+  "fields": {
+    "code": "SUPERIOR",
+    "name": "Superior",
+    "time_multiplier": "1.10",
+    "is_active": true
+  }
+},
+{
+  "model": "core.roomtype",
+  "pk": 3,
+  "fields": {
+    "code": "SUITE",
+    "name": "Suite",
+    "time_multiplier": "1.50",
+    "is_active": true
+  }
+},
+{
+  "model": "core.roomtype",
+  "pk": 4,
+  "fields": {
+    "code": "JUNIOR_SUITE",
+    "name": "Junior Suite",
+    "time_multiplier": "1.30",
+    "is_active": true
+  }
+},
+{
+  "model": "core.room",
+  "pk": 1,
+  "fields": {
+    "number": "201",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 1,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 2,
+  "fields": {
+    "number": "202",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 2,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 3,
+  "fields": {
+    "number": "203",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 3,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 4,
+  "fields": {
+    "number": "204",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 4,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 5,
+  "fields": {
+    "number": "205",
+    "zone": 1,
+    "room_type": 2,
+    "order_in_zone": 5,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 6,
+  "fields": {
+    "number": "206",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 6,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 7,
+  "fields": {
+    "number": "207",
+    "zone": 1,
+    "room_type": 1,
+    "order_in_zone": 7,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 8,
+  "fields": {
+    "number": "301",
+    "zone": 2,
+    "room_type": 1,
+    "order_in_zone": 1,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 9,
+  "fields": {
+    "number": "302",
+    "zone": 2,
+    "room_type": 2,
+    "order_in_zone": 2,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 10,
+  "fields": {
+    "number": "303",
+    "zone": 2,
+    "room_type": 1,
+    "order_in_zone": 3,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 11,
+  "fields": {
+    "number": "304",
+    "zone": 2,
+    "room_type": 1,
+    "order_in_zone": 4,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 12,
+  "fields": {
+    "number": "305",
+    "zone": 2,
+    "room_type": 1,
+    "order_in_zone": 5,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 13,
+  "fields": {
+    "number": "401",
+    "zone": 3,
+    "room_type": 1,
+    "order_in_zone": 1,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 14,
+  "fields": {
+    "number": "402",
+    "zone": 3,
+    "room_type": 1,
+    "order_in_zone": 2,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 15,
+  "fields": {
+    "number": "403",
+    "zone": 3,
+    "room_type": 1,
+    "order_in_zone": 3,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 16,
+  "fields": {
+    "number": "404",
+    "zone": 3,
+    "room_type": 1,
+    "order_in_zone": 4,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 17,
+  "fields": {
+    "number": "405",
+    "zone": 3,
+    "room_type": 2,
+    "order_in_zone": 5,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 18,
+  "fields": {
+    "number": "410",
+    "zone": 3,
+    "room_type": 3,
+    "order_in_zone": 6,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 19,
+  "fields": {
+    "number": "501",
+    "zone": 4,
+    "room_type": 3,
+    "order_in_zone": 1,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 20,
+  "fields": {
+    "number": "502",
+    "zone": 4,
+    "room_type": 2,
+    "order_in_zone": 2,
+    "corridor_side": "B",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.room",
+  "pk": 21,
+  "fields": {
+    "number": "503",
+    "zone": 4,
+    "room_type": 1,
+    "order_in_zone": 3,
+    "corridor_side": "A",
+    "is_active": true,
+    "notes": ""
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 1,
+  "fields": {
+    "code": "LUN",
+    "name": "Lunes",
+    "iso_weekday": 1
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 2,
+  "fields": {
+    "code": "MAR",
+    "name": "Martes",
+    "iso_weekday": 2
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 3,
+  "fields": {
+    "code": "MIE",
+    "name": "Miércoles",
+    "iso_weekday": 3
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 4,
+  "fields": {
+    "code": "JUE",
+    "name": "Jueves",
+    "iso_weekday": 4
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 5,
+  "fields": {
+    "code": "VIE",
+    "name": "Viernes",
+    "iso_weekday": 5
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 6,
+  "fields": {
+    "code": "SAB",
+    "name": "Sábado",
+    "iso_weekday": 6
+  }
+},
+{
+  "model": "core.dayofweek",
+  "pk": 7,
+  "fields": {
+    "code": "DOM",
+    "name": "Domingo",
+    "iso_weekday": 7
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 5,
+  "fields": {
+    "code": "GG",
+    "name": "Gouvernante Générale",
+    "description": "Supervisión general y gestión",
+    "can_clean_rooms": false,
+    "display_order": 1,
+    "is_active": true,
+    "allowed_blocks": [
+      1
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 6,
+  "fields": {
+    "code": "ASST_GG",
+    "name": "Assistante GG",
+    "description": "Asistente de gouvernante",
+    "can_clean_rooms": false,
+    "display_order": 2,
+    "is_active": true,
+    "allowed_blocks": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 7,
+  "fields": {
+    "code": "GOUV_SOIR",
+    "name": "Gouvernante du Soir",
+    "description": "Supervisión turno tarde",
+    "can_clean_rooms": false,
+    "display_order": 3,
+    "is_active": true,
+    "allowed_blocks": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 8,
+  "fields": {
+    "code": "FDC",
+    "name": "Femme de Chambre",
+    "description": "Housekeeping - limpieza habitaciones",
+    "can_clean_rooms": true,
+    "display_order": 4,
+    "is_active": true,
+    "allowed_blocks": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 9,
+  "fields": {
+    "code": "VDC",
+    "name": "Valet de Chambre",
+    "description": "Housekeeping - limpieza habitaciones",
+    "can_clean_rooms": true,
+    "display_order": 5,
+    "is_active": true,
+    "allowed_blocks": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 10,
+  "fields": {
+    "code": "EQUIPIER_JOUR",
+    "name": "Équipier Jour",
+    "description": "Áreas comunes y suministros - día",
+    "can_clean_rooms": false,
+    "display_order": 6,
+    "is_active": true,
+    "allowed_blocks": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "staff.role",
+  "pk": 11,
+  "fields": {
+    "code": "EQUIPIER_NUIT",
+    "name": "Équipier Nuit",
+    "description": "Áreas comunes y suministros - noche",
+    "can_clean_rooms": true,
+    "display_order": 7,
+    "is_active": true,
+    "allowed_blocks": [
+      3
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 7,
+  "fields": {
+    "employee_code": "GG001",
+    "first_name": "Ingrid",
+    "last_name": "PICAULT",
+    "role": 5,
+    "weekly_hours_target": "45.0",
+    "elasticity": "LOW",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 8,
+  "fields": {
+    "employee_code": "ASST001",
+    "first_name": "Steffi",
+    "last_name": "MONIT",
+    "role": 6,
+    "weekly_hours_target": "41.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 9,
+  "fields": {
+    "employee_code": "GSOIR001",
+    "first_name": "Chertande",
+    "last_name": "LEONARD",
+    "role": 7,
+    "weekly_hours_target": "42.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 10,
+  "fields": {
+    "employee_code": "FDC001",
+    "first_name": "Dorian",
+    "last_name": "PERRIER",
+    "role": 9,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 11,
+  "fields": {
+    "employee_code": "FDC002",
+    "first_name": "Cynthia",
+    "last_name": "ROMERO",
+    "role": 8,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 12,
+  "fields": {
+    "employee_code": "FDC003",
+    "first_name": "Marion",
+    "last_name": "VIDAL",
+    "role": 8,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 13,
+  "fields": {
+    "employee_code": "FDC004",
+    "first_name": "Gabriela",
+    "last_name": "CANADA",
+    "role": 8,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 14,
+  "fields": {
+    "employee_code": "FDC005",
+    "first_name": "Francisco",
+    "last_name": "BLANCO",
+    "role": 9,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 15,
+  "fields": {
+    "employee_code": "VDC001",
+    "first_name": "Inés",
+    "last_name": "LE BAIL",
+    "role": 8,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 16,
+  "fields": {
+    "employee_code": "VDC002",
+    "first_name": "Christopher",
+    "last_name": "LADHUIE",
+    "role": 9,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 17,
+  "fields": {
+    "employee_code": "VDC003",
+    "first_name": "Adrian",
+    "last_name": "WHITE",
+    "role": 9,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 18,
+  "fields": {
+    "employee_code": "VDC004",
+    "first_name": "Augusto",
+    "last_name": "TANTALEAN",
+    "role": 9,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1
+    ],
+    "fixed_days_off": [
+      1,
+      2
+    ],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 19,
+  "fields": {
+    "employee_code": "VDC005",
+    "first_name": "Irina",
+    "last_name": "ZINCHENKO",
+    "role": 8,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 20,
+  "fields": {
+    "employee_code": "EQJOUR001",
+    "first_name": "Benjamin",
+    "last_name": "GUILLARD",
+    "role": 10,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 21,
+  "fields": {
+    "employee_code": "EQJOUR002",
+    "first_name": "Quentin",
+    "last_name": "MAILLE",
+    "role": 10,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 22,
+  "fields": {
+    "employee_code": "EQJOUR003",
+    "first_name": "Sebastien",
+    "last_name": "CAMESCASSE",
+    "role": 10,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": false,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      1,
+      2
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": []
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 23,
+  "fields": {
+    "employee_code": "EQNUIT001",
+    "first_name": "Philippe",
+    "last_name": "CABANEAU",
+    "role": 11,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": true,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      3
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 24,
+  "fields": {
+    "employee_code": "EQNUIT002",
+    "first_name": "Romain",
+    "last_name": "LEGEARD",
+    "role": 11,
+    "weekly_hours_target": "39.0",
+    "elasticity": "MEDIUM",
+    "can_work_night": true,
+    "is_active": true,
+    "hire_date": null,
+    "notes": "",
+    "allowed_blocks": [
+      3
+    ],
+    "fixed_days_off": [],
+    "eligible_tasks": [
+      1,
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "staff.team",
+  "pk": 2,
+  "fields": {
+    "name": "Francisco & Gabriela",
+    "team_type": "FIXED",
+    "is_active": true,
+    "notes": "",
+    "members": [
+      14,
+      13
+    ]
+  }
+},
+{
+  "model": "staff.team",
+  "pk": 3,
+  "fields": {
+    "name": "Dorian & Ines",
+    "team_type": "FIXED",
+    "is_active": true,
+    "notes": "",
+    "members": [
+      15,
+      10
+    ]
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 6,
+  "fields": {
+    "code": "GG_DIA",
+    "name": "GG Día",
+    "description": "",
+    "role": 5,
+    "time_block": 1,
+    "start_time": "08:00:00",
+    "end_time": "17:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 45,
+    "max_daily_hours": 9,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 7,
+  "fields": {
+    "code": "ASST_MANANA",
+    "name": "Assistante Mañana",
+    "description": "",
+    "role": 6,
+    "time_block": 1,
+    "start_time": "08:00:00",
+    "end_time": "16:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 41,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 8,
+  "fields": {
+    "code": "ASST_TARDE",
+    "name": "Assistante Tarde",
+    "description": "",
+    "role": 6,
+    "time_block": 2,
+    "start_time": "14:00:00",
+    "end_time": "22:00:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 41,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 9,
+  "fields": {
+    "code": "GOUV_SOIR_MANANA",
+    "name": "Gouv. Soir Mañana",
+    "description": "",
+    "role": 7,
+    "time_block": 1,
+    "start_time": "08:00:00",
+    "end_time": "16:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 42,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 10,
+  "fields": {
+    "code": "GOUV_SOIR_TARDE",
+    "name": "Gouv. Soir Tarde",
+    "description": "",
+    "role": 7,
+    "time_block": 2,
+    "start_time": "14:00:00",
+    "end_time": "22:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 42,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 11,
+  "fields": {
+    "code": "FDC_MANANA",
+    "name": "FDC Mañana",
+    "description": "",
+    "role": 8,
+    "time_block": 1,
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 12,
+  "fields": {
+    "code": "FDC_TARDE",
+    "name": "FDC Tarde",
+    "description": "",
+    "role": 8,
+    "time_block": 2,
+    "start_time": "13:30:00",
+    "end_time": "21:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 13,
+  "fields": {
+    "code": "VDC_MANANA",
+    "name": "VDC Mañana",
+    "description": "",
+    "role": 9,
+    "time_block": 1,
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 14,
+  "fields": {
+    "code": "VDC_TARDE",
+    "name": "VDC Tarde",
+    "description": "",
+    "role": 9,
+    "time_block": 2,
+    "start_time": "13:30:00",
+    "end_time": "21:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 15,
+  "fields": {
+    "code": "EQ_JOUR_MANANA",
+    "name": "Équipier Día Mañana",
+    "description": "",
+    "role": 10,
+    "time_block": 1,
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 16,
+  "fields": {
+    "code": "EQ_JOUR_TARDE",
+    "name": "Équipier Día Tarde",
+    "description": "",
+    "role": 10,
+    "time_block": 2,
+    "start_time": "13:30:00",
+    "end_time": "21:30:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "shifts.shifttemplate",
+  "pk": 17,
+  "fields": {
+    "code": "EQ_NUIT",
+    "name": "Équipier Noche",
+    "description": "",
+    "role": 11,
+    "time_block": 3,
+    "start_time": "22:00:00",
+    "end_time": "06:00:00",
+    "break_start": null,
+    "break_end": null,
+    "break_minutes": 0,
+    "weekly_hours_target": 39,
+    "max_daily_hours": 8,
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 1,
+  "fields": {
+    "task_type": 1,
+    "condition": "NONE",
+    "room_type": null,
+    "base_minutes": null,
+    "time_multiplier": "1.00",
+    "priority": 10,
+    "description": "Base DEPART",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 2,
+  "fields": {
+    "task_type": 1,
+    "condition": "SUITE",
+    "room_type": 3,
+    "base_minutes": null,
+    "time_multiplier": "1.50",
+    "priority": 10,
+    "description": "DEPART en Suite",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 3,
+  "fields": {
+    "task_type": 1,
+    "condition": "VIP",
+    "room_type": null,
+    "base_minutes": null,
+    "time_multiplier": "1.20",
+    "priority": 10,
+    "description": "DEPART VIP",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 4,
+  "fields": {
+    "task_type": 5,
+    "condition": "NONE",
+    "room_type": null,
+    "base_minutes": null,
+    "time_multiplier": "1.00",
+    "priority": 10,
+    "description": "Base COUVERTURE",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 5,
+  "fields": {
+    "task_type": 5,
+    "condition": "RECOUCH_DECLINED",
+    "room_type": null,
+    "base_minutes": null,
+    "time_multiplier": "1.40",
+    "priority": 10,
+    "description": "COUVERTURE cuando recouch rechazado",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.tasktimerule",
+  "pk": 6,
+  "fields": {
+    "task_type": 5,
+    "condition": "VIP",
+    "room_type": null,
+    "base_minutes": null,
+    "time_multiplier": "1.30",
+    "priority": 10,
+    "description": "COUVERTURE VIP",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.zoneassignmentrule",
+  "pk": 1,
+  "fields": {
+    "code": "COMPLETE_ZONE_FIRST",
+    "name": "Completar zona antes de cambiar",
+    "description": "",
+    "value_boolean": true,
+    "value_integer": null,
+    "value_text": "",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.zoneassignmentrule",
+  "pk": 2,
+  "fields": {
+    "code": "MAX_ZONES_PER_EMPLOYEE",
+    "name": "Máximo de zonas por empleado",
+    "description": "",
+    "value_boolean": null,
+    "value_integer": 3,
+    "value_text": "",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.zoneassignmentrule",
+  "pk": 3,
+  "fields": {
+    "code": "ADJACENT_ZONES_PREFERRED",
+    "name": "Preferir zonas adyacentes",
+    "description": "",
+    "value_boolean": true,
+    "value_integer": null,
+    "value_text": "",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.zoneassignmentrule",
+  "pk": 4,
+  "fields": {
+    "code": "PAIR_SAME_ZONE",
+    "name": "Pareja trabaja misma zona",
+    "description": "",
+    "value_boolean": true,
+    "value_integer": null,
+    "value_text": "",
+    "is_active": true
+  }
+},
+{
+  "model": "rules.elasticityrule",
+  "pk": 1,
+  "fields": {
+    "elasticity_level": "LOW",
+    "max_extra_hours_week": "0.0",
+    "max_extra_hours_day": "0.0",
+    "assignment_priority": 1,
+    "description": ""
+  }
+},
+{
+  "model": "rules.elasticityrule",
+  "pk": 2,
+  "fields": {
+    "elasticity_level": "MEDIUM",
+    "max_extra_hours_week": "4.0",
+    "max_extra_hours_day": "1.0",
+    "assignment_priority": 2,
+    "description": ""
+  }
+},
+{
+  "model": "rules.elasticityrule",
+  "pk": 3,
+  "fields": {
+    "elasticity_level": "HIGH",
+    "max_extra_hours_week": "8.0",
+    "max_extra_hours_day": "2.0",
+    "assignment_priority": 3,
+    "description": ""
+  }
+},
+{
+  "model": "planning.weekplan",
+  "pk": 33,
+  "fields": {
+    "week_start_date": "2026-01-12",
+    "name": "Semana 12/01/2026",
+    "status": "DRAFT",
+    "created_at": "2026-01-10T12:04:14.391Z",
+    "updated_at": "2026-01-10T12:04:14.391Z",
+    "created_by": "",
+    "published_at": null,
+    "notes": "",
+    "forecast_data": [
+      {
+        "date": "2026-01-12",
+        "arrivals": 3,
+        "occupied": 27,
+        "departures": 3
+      },
+      {
+        "date": "2026-01-13",
+        "arrivals": 1,
+        "occupied": 28,
+        "departures": 0
+      },
+      {
+        "date": "2026-01-14",
+        "arrivals": 4,
+        "occupied": 23,
+        "departures": 9
+      },
+      {
+        "date": "2026-01-15",
+        "arrivals": 8,
+        "occupied": 30,
+        "departures": 1
+      },
+      {
+        "date": "2026-01-16",
+        "arrivals": 6,
+        "occupied": 32,
+        "departures": 4
+      },
+      {
+        "date": "2026-01-17",
+        "arrivals": 7,
+        "occupied": 30,
+        "departures": 9
+      },
+      {
+        "date": "2026-01-18",
+        "arrivals": 10,
+        "occupied": 30,
+        "departures": 10
+      }
+    ],
+    "load_calculation": {
+      "by_day": {
+        "2026-01-12": {
+          "tasks": {
+            "DEPART": {
+              "count": 3,
+              "minutes": 300
+            },
+            "RECOUCH": {
+              "count": 24,
+              "minutes": 960
+            },
+            "COUVERTURE": {
+              "count": 27,
+              "minutes": 540
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 21.0,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 9.0,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Lun",
+          "total_hours": 30.0
+        },
+        "2026-01-13": {
+          "tasks": {
+            "DEPART": {
+              "count": 0,
+              "minutes": 0
+            },
+            "RECOUCH": {
+              "count": 27,
+              "minutes": 1080
+            },
+            "COUVERTURE": {
+              "count": 28,
+              "minutes": 560
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 18.0,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 9.3,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Mar",
+          "total_hours": 27.3
+        },
+        "2026-01-14": {
+          "tasks": {
+            "DEPART": {
+              "count": 9,
+              "minutes": 900
+            },
+            "RECOUCH": {
+              "count": 19,
+              "minutes": 760
+            },
+            "COUVERTURE": {
+              "count": 23,
+              "minutes": 460
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 27.7,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 7.7,
+              "persons_needed": 2
+            }
+          },
+          "day_name": "Mié",
+          "total_hours": 35.3
+        },
+        "2026-01-15": {
+          "tasks": {
+            "DEPART": {
+              "count": 1,
+              "minutes": 100
+            },
+            "RECOUCH": {
+              "count": 22,
+              "minutes": 880
+            },
+            "COUVERTURE": {
+              "count": 30,
+              "minutes": 600
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 16.3,
+              "persons_needed": 0
+            },
+            "EVENING": {
+              "hours": 10.0,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Jue",
+          "total_hours": 26.3
+        },
+        "2026-01-16": {
+          "tasks": {
+            "DEPART": {
+              "count": 4,
+              "minutes": 400
+            },
+            "RECOUCH": {
+              "count": 26,
+              "minutes": 1040
+            },
+            "COUVERTURE": {
+              "count": 32,
+              "minutes": 640
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 24.0,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 10.7,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Vie",
+          "total_hours": 34.7
+        },
+        "2026-01-17": {
+          "tasks": {
+            "DEPART": {
+              "count": 9,
+              "minutes": 900
+            },
+            "RECOUCH": {
+              "count": 23,
+              "minutes": 920
+            },
+            "COUVERTURE": {
+              "count": 30,
+              "minutes": 600
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 30.3,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 10.0,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Sáb",
+          "total_hours": 40.3
+        },
+        "2026-01-18": {
+          "tasks": {
+            "DEPART": {
+              "count": 10,
+              "minutes": 1000
+            },
+            "RECOUCH": {
+              "count": 20,
+              "minutes": 800
+            },
+            "COUVERTURE": {
+              "count": 30,
+              "minutes": 600
+            }
+          },
+          "shifts": {
+            "DAY": {
+              "hours": 30.0,
+              "persons_needed": 2
+            },
+            "EVENING": {
+              "hours": 10.0,
+              "persons_needed": 3
+            }
+          },
+          "day_name": "Dom",
+          "total_hours": 40.0
+        }
+      },
+      "totals": {
+        "total_hours": 234.0,
+        "day_shift_hours": 167.3,
+        "evening_shift_hours": 66.7
+      }
+    }
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1801,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 18,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1802,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 18,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1803,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 18,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1804,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 18,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1805,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 18,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1806,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 14,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1807,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 14,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1808,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 14,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1809,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 14,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1810,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 14,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1811,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 13,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1812,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 13,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1813,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 13,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1814,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 13,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1815,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 13,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1816,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-12",
+    "employee": 15,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1817,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-13",
+    "employee": 15,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1818,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 15,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1819,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 15,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1820,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 15,
+    "team": null,
+    "shift_template": 11,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1821,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-12",
+    "employee": 10,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1822,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-13",
+    "employee": 10,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1823,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 10,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1824,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 10,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1825,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 10,
+    "team": null,
+    "shift_template": 13,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1826,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-12",
+    "employee": 16,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1827,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-13",
+    "employee": 16,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1828,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 16,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1829,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 16,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1830,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 16,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1831,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-13",
+    "employee": 11,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1832,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 11,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1833,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 11,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1834,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 11,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1835,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 11,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1836,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-14",
+    "employee": 12,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1837,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 12,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1838,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 12,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1839,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 12,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1840,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 12,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1841,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-12",
+    "employee": 17,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1842,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-15",
+    "employee": 17,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1843,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 17,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1844,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 17,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1845,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 17,
+    "team": null,
+    "shift_template": 14,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1846,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-12",
+    "employee": 19,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1847,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-13",
+    "employee": 19,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1848,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-16",
+    "employee": 19,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1849,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-17",
+    "employee": 19,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "8.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+},
+{
+  "model": "planning.shiftassignment",
+  "pk": 1850,
+  "fields": {
+    "week_plan": 33,
+    "date": "2026-01-18",
+    "employee": 19,
+    "team": null,
+    "shift_template": 12,
+    "assigned_hours": "7.00",
+    "is_day_off": false,
+    "notes": ""
+  }
+}
+]

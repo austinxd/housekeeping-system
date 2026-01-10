@@ -163,7 +163,7 @@ class ForecastLoader:
             result['totals']['evening_minutes'] += day_load['shifts']['EVENING']['minutes']
             result['totals']['total_minutes'] += day_load['total_minutes']
 
-            # Calcular personas necesarias (asumiendo 8h por turno)
+            # Calcular personas necesarias (8h de trabajo por turno)
             day_persons = day_load['shifts']['DAY']['hours'] / 8
             evening_persons = day_load['shifts']['EVENING']['hours'] / 8
 
@@ -220,6 +220,7 @@ class ForecastLoader:
         day_config = self.shift_config.get('DAY', {})
         evening_config = self.shift_config.get('EVENING', {})
 
+        # 8h de trabajo por turno (el almuerzo se suma al horario, no se resta)
         morning_shift_hours = day_config.get('shift_hours', 8.0)
         morning_min_staff = day_config.get('min_staff', 2)
 

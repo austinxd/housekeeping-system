@@ -373,9 +373,10 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
             end_time = None
             if assignment.shift_template and assignment.shift_template.start_time:
                 start_time = assignment.shift_template.start_time.strftime('%H:%M')
-                # Calcular salida: entrada + horas asignadas
+                # Calcular salida: entrada + horas trabajadas + 30min almuerzo
                 start_dt = datetime.combine(assignment.date, assignment.shift_template.start_time)
-                end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours))
+                lunch_break = 0.5  # 30 minutos de almuerzo
+                end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours) + lunch_break)
                 end_time = end_dt.strftime('%H:%M')
 
             by_assignee[key]['shifts'].append({
@@ -475,7 +476,8 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                     if start_time:
                         from datetime import datetime
                         start_dt = datetime.combine(assignment.date, start_time)
-                        end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours))
+                        # Hora salida = horas trabajadas + 30min almuerzo
+                        end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours) + 0.5)
                         end_time = end_dt.strftime('%H:%M')
 
                     assignments_by_day[day_key][block_code].append({
@@ -554,6 +556,26 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
             day_persons = day_load.get('shifts', {}).get('DAY', {}).get('persons_needed', 0)
             evening_persons = day_load.get('shifts', {}).get('EVENING', {}).get('persons_needed', 0)
 
+            # Calcular horas asignadas vs necesarias
+            # Horas asignadas por turno (trabajo efectivo, sin almuerzo)
+            day_assigned_hours = sum(emp.get('hours', 0) for emp in assigned_day)
+            evening_assigned_hours = sum(emp.get('hours', 0) for emp in assigned_evening)
+            total_assigned_hours = day_assigned_hours + evening_assigned_hours
+
+            # Horas necesarias (carga de trabajo)
+            day_needed_hours = day_hours  # horas necesarias para DEPART + RECOUCH
+            evening_needed_hours = evening_hours  # horas necesarias para COUVERTURE
+            total_needed_hours = day_needed_hours + evening_needed_hours
+
+            # Cálculo de tiempo de sobra/déficit
+            # Nota: turno TARDE ayuda con tareas de DÍA durante ~4.5h
+            evening_help_contribution = len(assigned_evening) * evening_helps_hours
+            effective_day_capacity = day_assigned_hours + evening_help_contribution
+
+            day_spare = effective_day_capacity - day_needed_hours
+            evening_spare = evening_assigned_hours - evening_needed_hours
+            total_spare = total_assigned_hours - total_needed_hours
+
             day_explanation = {
                 'date': day_key,
                 'day_name': day_names_es[i],
@@ -571,6 +593,25 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                 'task_distribution': {
                     'day_tasks': day_task_distribution,
                     'evening_tasks': evening_task_distribution,
+                },
+                'hours_balance': {
+                    'day': {
+                        'assigned': round(day_assigned_hours, 1),
+                        'needed': round(day_needed_hours, 1),
+                        'evening_help': round(evening_help_contribution, 1),
+                        'effective_capacity': round(effective_day_capacity, 1),
+                        'spare': round(day_spare, 1),
+                    },
+                    'evening': {
+                        'assigned': round(evening_assigned_hours, 1),
+                        'needed': round(evening_needed_hours, 1),
+                        'spare': round(evening_spare, 1),
+                    },
+                    'total': {
+                        'assigned': round(total_assigned_hours, 1),
+                        'needed': round(total_needed_hours, 1),
+                        'spare': round(total_spare, 1),
+                    },
                 },
                 'explanation_text': '',
             }
@@ -637,11 +678,54 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
             text_parts.append(f"")
             text_parts.append(f"{'─' * 55}")
             text_parts.append(f"📋 CARGA: {day_hours:.1f}h limpieza + {evening_hours:.1f}h couverture = {day_hours + evening_hours:.1f}h total")
+
+            # Balance de horas
+            spare_icon = '✓' if total_spare >= 0 else '⚠'
+            spare_sign = '+' if total_spare >= 0 else ''
+            text_parts.append(f"⏱️ BALANCE: {total_assigned_hours:.1f}h asignadas / {total_needed_hours:.1f}h necesarias = {spare_icon} {spare_sign}{total_spare:.1f}h")
             text_parts.append(f"{'═' * 55}")
 
             day_explanation['explanation_text'] = '\n'.join(text_parts)
 
             explanation['days'].append(day_explanation)
+
+        # Calcular resumen semanal de horas
+        # 1. Horas contratadas (weekly_hours_target de cada empleado único)
+        unique_employees = {}
+        total_week_assigned = 0
+        for assignment in assignments:
+            if assignment.employee and not assignment.is_day_off:
+                emp_id = assignment.employee.id
+                if emp_id not in unique_employees:
+                    unique_employees[emp_id] = {
+                        'name': assignment.employee.full_name,
+                        'contracted': float(assignment.employee.weekly_hours_target),
+                        'assigned': 0,
+                    }
+                unique_employees[emp_id]['assigned'] += float(assignment.assigned_hours)
+                total_week_assigned += float(assignment.assigned_hours)
+
+        total_week_contracted = sum(emp['contracted'] for emp in unique_employees.values())
+        total_week_needed = load_calculation.get('totals', {}).get('total_hours', 0)
+
+        explanation['weekly_summary'] = {
+            'employees': [
+                {
+                    'name': emp['name'],
+                    'contracted': round(emp['contracted'], 1),
+                    'assigned': round(emp['assigned'], 1),
+                    'pending': round(emp['contracted'] - emp['assigned'], 1),
+                }
+                for emp in unique_employees.values()
+            ],
+            'totals': {
+                'contracted': round(total_week_contracted, 1),
+                'assigned': round(total_week_assigned, 1),
+                'needed': round(total_week_needed, 1),
+                'contracted_vs_assigned': round(total_week_contracted - total_week_assigned, 1),
+                'assigned_vs_needed': round(total_week_assigned - total_week_needed, 1),
+            }
+        }
 
         return Response(explanation)
 
@@ -1294,7 +1378,8 @@ class ForecastWeekPlanView(views.APIView):
                     if hours_assigned >= weekly_hours:
                         break
 
-                    hours_per_day = min(8, weekly_hours - hours_assigned)
+                    # Máximo 8h de trabajo por día, respetando horas semanales del empleado
+                    hours_per_day = min(8.0, weekly_hours - hours_assigned)
 
                     ShiftAssignment.objects.create(
                         week_plan=week_plan,
