@@ -596,8 +596,10 @@ export default function WeeklyPlanning() {
                                 const occupied = day.forecast.occupied;
 
                                 // Helper para obtener TaskType por código
+                                // taskTypes puede ser array directo o { results: [...] }
+                                const taskTypesArray = Array.isArray(taskTypes) ? taskTypes : taskTypes?.results || [];
                                 const getTaskType = (code: string) =>
-                                  taskTypes?.find((t: any) => t.code === code);
+                                  taskTypesArray.find((t: any) => t.code === code);
 
                                 // Helper para calcular minutos entre dos tiempos (HH:MM:SS)
                                 const timeToMinutes = (timeStr: string | null) => {
