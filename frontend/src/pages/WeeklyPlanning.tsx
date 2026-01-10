@@ -8,6 +8,8 @@ import {
   getWeekPlanByEmployee,
   uploadForecastPDF,
   getWeekPlanLoadExplanation,
+  getTaskTypes,
+  getTimeBlocks,
   ForecastUploadResult,
 } from '../api/client';
 import { WeekPlan } from '../types';
@@ -90,6 +92,18 @@ export default function WeeklyPlanning() {
     queryKey: ['weekPlanLoadExplanation', selectedPlanId],
     queryFn: () => getWeekPlanLoadExplanation(selectedPlanId!),
     enabled: !!selectedPlanId,
+  });
+
+  // Config from admin panel
+  const { data: taskTypes } = useQuery({
+    queryKey: ['taskTypes'],
+    queryFn: getTaskTypes,
+  });
+
+  // TimeBlocks para futuro uso de períodos dinámicos
+  useQuery({
+    queryKey: ['timeBlocks'],
+    queryFn: getTimeBlocks,
   });
 
   // Mutations
@@ -581,16 +595,38 @@ export default function WeeklyPlanning() {
                                 const totalRooms = totalDeparts + totalRecouches;
                                 const occupied = day.forecast.occupied;
 
-                                // Tiempos de tareas (en minutos) - PAREJAS para depart/recouch
-                                const DEPART_MIN = 50;  // 2 personas juntas = 50 min por habitación
-                                const RECOUCH_MIN = 20; // 2 personas juntas = 20 min por habitación
-                                const COUV_MIN = 20;    // 1 persona sola = 20 min por couverture
+                                // Helper para obtener TaskType por código
+                                const getTaskType = (code: string) =>
+                                  taskTypes?.find((t: any) => t.code === code);
 
-                                // Minutos por período
-                                const P1_MIN = 210; // 09:00-12:30 = 3.5h
-                                const P2_MIN = 210; // 13:30-17:00 = 3.5h
-                                const P3_MIN = 90;  // 17:00-18:30 = 1.5h
-                                const COUV_PERIOD_MIN = 150; // 19:00-21:30 = 2.5h
+                                // Helper para calcular minutos entre dos tiempos (HH:MM:SS)
+                                const timeToMinutes = (timeStr: string | null) => {
+                                  if (!timeStr) return 0;
+                                  const [h, m] = timeStr.split(':').map(Number);
+                                  return h * 60 + m;
+                                };
+
+                                // Tiempos de tareas desde admin (fallback a valores por defecto)
+                                const departTask = getTaskType('DEPART');
+                                const recouchTask = getTaskType('RECOUCH');
+                                const couvTask = getTaskType('COUVERTURE');
+
+                                const DEPART_MIN = departTask?.base_minutes || 50;
+                                const RECOUCH_MIN = recouchTask?.base_minutes || 20;
+                                const COUV_MIN = couvTask?.base_minutes || 20;
+
+                                // Períodos desde admin (fallback a valores por defecto)
+                                // Calcular período de couverture basado en earliest_start y latest_end del TaskType
+                                const couvStart = couvTask?.earliest_start_time;
+                                const couvEnd = couvTask?.latest_end_time;
+                                const COUV_PERIOD_MIN = couvStart && couvEnd
+                                  ? timeToMinutes(couvEnd) - timeToMinutes(couvStart)
+                                  : 210;
+
+                                // Períodos de trabajo (simplificado por ahora)
+                                const P1_MIN = 210; // 09:00-12:30 = 3.5h (mañana sola)
+                                const P2_MIN = 210; // 13:30-17:00 = 3.5h (mañana + tarde)
+                                const P3_MIN = 90;  // 17:00-18:30 = 1.5h (tarde sola)
 
                                 // ========== CÁLCULO DE NECESIDADES ==========
 
@@ -766,7 +802,9 @@ export default function WeeklyPlanning() {
                                         <div className="text-lg">🌙</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
-                                            <span className="font-medium text-orange-700 text-sm">19:00 - 21:30</span>
+                                            <span className="font-medium text-orange-700 text-sm">
+                                              {couvStart ? couvStart.slice(0, 5) : '19:00'} - {couvEnd ? couvEnd.slice(0, 5) : '22:30'}
+                                            </span>
                                             <div className="flex items-center gap-2">
                                               <span className="text-xs text-gray-500">{t.weekly.legend.couvertures}</span>
                                               {couvDeficitPersons > 0 ? (
