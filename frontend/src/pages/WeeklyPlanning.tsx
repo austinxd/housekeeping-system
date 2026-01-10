@@ -702,8 +702,15 @@ export default function WeeklyPlanning() {
                                 // Helper para formatear tiempo sobrante
                                 const formatSpare = (minutes: number) => {
                                   if (minutes === 0) return null;
-                                  const hours = (minutes / 60).toFixed(1);
-                                  return minutes > 0 ? `+${hours}h` : `${hours}h`;
+                                  const absMin = Math.abs(minutes);
+                                  const sign = minutes > 0 ? '+' : '-';
+                                  // Si es menos de 60 min, mostrar en minutos
+                                  if (absMin < 60) {
+                                    return `${sign}${Math.round(absMin)}min`;
+                                  }
+                                  // Si es 60+ min, mostrar en horas
+                                  const hours = (absMin / 60).toFixed(1);
+                                  return `${sign}${hours}h`;
                                 };
 
                                 const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
