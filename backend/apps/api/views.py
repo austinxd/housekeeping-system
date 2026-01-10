@@ -481,6 +481,7 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                         end_time = end_dt.strftime('%H:%M')
 
                     assignments_by_day[day_key][block_code].append({
+                        'employee_id': assignment.employee.id if assignment.employee else None,
                         'employee': assignment.employee.full_name if assignment.employee else None,
                         'employee_short': assignment.employee.first_name if assignment.employee else None,
                         'hours': float(assignment.assigned_hours),
