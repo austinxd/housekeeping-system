@@ -629,8 +629,8 @@ export default function WeeklyPlanning() {
                                 p1Used += recouchDoneP1 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP1;
 
-                                // P2: Mañana + Tarde juntos
-                                const p2Pairs = Math.max(pairsDay, pairsEvening);
+                                // P2: Mañana + Tarde juntos (ambas parejas trabajan)
+                                const p2Pairs = pairsDay + pairsEvening;
                                 const p2Capacity = p2Pairs * P2_MIN;
                                 const departsDoneP2 = Math.min(departsLeft, Math.floor(p2Capacity / DEPART_MIN));
                                 let p2Used = departsDoneP2 * DEPART_MIN;
@@ -659,6 +659,8 @@ export default function WeeklyPlanning() {
 
                                 // Calcular personas sobrantes (sin pareja)
                                 const soloDay = numDay % 2;
+                                const soloEvening = numEvening % 2;
+                                const soloP2 = (numDay + numEvening) % 2;
 
                                 return (
                                   <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-200 overflow-hidden">
@@ -711,6 +713,7 @@ export default function WeeklyPlanning() {
                                             <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
                                             <span className="text-xs text-gray-500">
                                               {t.weekly.legend.morningEvening} ({p2Pairs} {p2Pairs === 1 ? 'par' : 'pares'})
+                                              {soloP2 > 0 && <span className="text-yellow-600 ml-1">+{soloP2} solo</span>}
                                             </span>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
@@ -734,6 +737,7 @@ export default function WeeklyPlanning() {
                                             <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
                                             <span className="text-xs text-gray-500">
                                               {t.weekly.legend.eveningFinishes} ({pairsEvening} {pairsEvening === 1 ? 'par' : 'pares'})
+                                              {soloEvening > 0 && <span className="text-yellow-600 ml-1">+{soloEvening} solo</span>}
                                             </span>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
