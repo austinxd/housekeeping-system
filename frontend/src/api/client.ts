@@ -99,14 +99,34 @@ export const updateEmployee = async (id: number, data: Record<string, unknown>) 
   return response.data;
 };
 
+export const deleteEmployee = async (id: number) => {
+  const response = await apiClient.delete(`/employees/${id}/`);
+  return response.data;
+};
+
 // Teams
 export const getTeams = async () => {
   const response = await apiClient.get('/teams/');
   return response.data;
 };
 
+export const getTeam = async (id: number) => {
+  const response = await apiClient.get(`/teams/${id}/`);
+  return response.data;
+};
+
 export const createTeam = async (data: Record<string, unknown>) => {
   const response = await apiClient.post('/teams/', data);
+  return response.data;
+};
+
+export const updateTeam = async (id: number, data: Record<string, unknown>) => {
+  const response = await apiClient.patch(`/teams/${id}/`, data);
+  return response.data;
+};
+
+export const deleteTeam = async (id: number) => {
+  const response = await apiClient.delete(`/teams/${id}/`);
   return response.data;
 };
 
