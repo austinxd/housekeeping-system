@@ -592,82 +592,87 @@ export default function WeeklyPlanning() {
                                 const P3_MIN = 90;  // 17:00-18:30 = 1.5h
                                 const COUV_PERIOD_MIN = 150; // 19:00-21:30 = 2.5h
 
-                                // Parejas por período (depart/recouch trabajan en parejas)
-                                const pairsP1 = Math.max(numDay > 0 ? 1 : 0, Math.floor(numDay / 2));
-                                const pairsP2 = Math.max((numDay + numEvening) > 0 ? 1 : 0, Math.floor((numDay + numEvening) / 2));
-                                const pairsP3 = Math.max(numEvening > 0 ? 1 : 0, Math.floor(numEvening / 2));
+                                // ========== CÁLCULO DE NECESIDADES ==========
 
-                                // Capacidad por período (minutos disponibles)
-                                const p1Capacity = pairsP1 * P1_MIN;
-                                const p2Capacity = pairsP2 * P2_MIN;
-                                const p3Capacity = pairsP3 * P3_MIN;
+                                // Trabajo de couvertures (en minutos)
+                                const totalCouvWorkMin = occupied * COUV_MIN;
 
-                                // Couverture: cada persona trabaja sola
+                                // Tiempo disponible por par para limpieza (P1 + P2 + P3 para tarde, solo P1+P2 para mañana)
+                                // Turno mañana: trabaja P1 + P2 = 7h = 420 min
+                                // Turno tarde: trabaja P2 + P3 + COUV = 7h = 420 min (pero P3 y COUV se superponen con mañana solo en P2)
+
+                                // Simplificación:
+                                // - Una pareja de mañana puede trabajar 7h en habitaciones
+                                // - Una pareja de tarde puede trabajar ~5.5h en habitaciones + 2.5h en couvertures
+
+                                // Personas mínimas necesarias para couvertures
+                                const minPersonsForCouv = Math.ceil(totalCouvWorkMin / COUV_PERIOD_MIN);
+
+                                // Parejas asignadas
+                                const pairsDay = Math.floor(numDay / 2);
+                                const pairsEvening = Math.floor(numEvening / 2);
+
+                                // Capacidad para couvertures
                                 const couvCapacity = numEvening * COUV_PERIOD_MIN;
-                                const couvNeeded = occupied * COUV_MIN;
-                                const couvBalance = (couvCapacity - couvNeeded) / 60;
 
-                                // Distribuir trabajo: primero departs (prioridad), luego recouches
+                                // ========== DISTRIBUCIÓN DEL TRABAJO ==========
+
                                 let departsLeft = totalDeparts;
                                 let recouchesLeft = totalRecouches;
 
-                                // P1: Hacer departs primero, luego recouches con tiempo restante
+                                // P1: Solo mañana (departs primero, luego recouches)
+                                const p1Capacity = pairsDay * P1_MIN;
                                 const departsDoneP1 = Math.min(departsLeft, Math.floor(p1Capacity / DEPART_MIN));
                                 let p1Used = departsDoneP1 * DEPART_MIN;
                                 departsLeft -= departsDoneP1;
-
                                 const recouchDoneP1 = Math.min(recouchesLeft, Math.floor((p1Capacity - p1Used) / RECOUCH_MIN));
                                 p1Used += recouchDoneP1 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP1;
 
-                                const p1Balance = (p1Capacity - p1Used) / 60;
-
-                                // P2: Continuar con lo que queda
+                                // P2: Mañana + Tarde juntos
+                                const p2Pairs = Math.max(pairsDay, pairsEvening);
+                                const p2Capacity = p2Pairs * P2_MIN;
                                 const departsDoneP2 = Math.min(departsLeft, Math.floor(p2Capacity / DEPART_MIN));
                                 let p2Used = departsDoneP2 * DEPART_MIN;
                                 departsLeft -= departsDoneP2;
-
                                 const recouchDoneP2 = Math.min(recouchesLeft, Math.floor((p2Capacity - p2Used) / RECOUCH_MIN));
                                 p2Used += recouchDoneP2 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP2;
 
-                                const p2Balance = (p2Capacity - p2Used) / 60;
-
-                                // P3: Terminar lo que quede
+                                // P3: Solo tarde termina
+                                const p3Capacity = pairsEvening * P3_MIN;
                                 const departsDoneP3 = Math.min(departsLeft, Math.floor(p3Capacity / DEPART_MIN));
                                 let p3Used = departsDoneP3 * DEPART_MIN;
                                 departsLeft -= departsDoneP3;
-
                                 const recouchDoneP3 = Math.min(recouchesLeft, Math.floor((p3Capacity - p3Used) / RECOUCH_MIN));
                                 p3Used += recouchDoneP3 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP3;
 
-                                const p3Balance = (p3Capacity - p3Used) / 60;
+                                // ========== VERIFICAR DÉFICIT ==========
 
-                                // Si quedan habitaciones sin hacer, es un problema
-                                const pendingRooms = departsLeft + recouchesLeft;
-
-                                // Función para mostrar balance
-                                const renderBalance = (balance: number, capacity: number) => {
-                                  if (capacity === 0) return <span className="text-[10px] text-gray-400">-</span>;
-                                  const isPositive = balance >= 0;
-                                  return (
-                                    <span className={`text-[10px] font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                      {isPositive ? '✓' : '⚠'} {isPositive ? '+' : ''}{balance.toFixed(1)}h
-                                    </span>
-                                  );
-                                };
+                                const roomsDeficit = departsLeft + recouchesLeft; // habitaciones sin hacer
+                                const couvDeficit = Math.max(0, totalCouvWorkMin - couvCapacity); // minutos faltantes couv
+                                const couvDeficitPersons = couvDeficit > 0 ? Math.ceil(couvDeficit / COUV_PERIOD_MIN) : 0;
 
                                 const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
                                 const eveningNames = day.assigned.EVENING.map(a => a.employee?.split(' ')[0]).join(' + ');
 
+                                // Calcular personas sobrantes (sin pareja)
+                                const soloDay = numDay % 2;
+
                                 return (
                                   <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-200 overflow-hidden">
-                                    {/* Header */}
+                                    {/* Header con resumen de necesidades */}
                                     <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                       <div className="flex justify-between items-center text-sm">
                                         <span className="font-semibold text-gray-700">{t.weekly.legend.dailyDistribution}</span>
-                                        <span className="text-gray-500">{totalRooms} {t.weekly.legend.rooms} + {occupied} {t.weekly.legend.couv}</span>
+                                        <div className="flex gap-3 text-xs">
+                                          <span className="text-gray-500">{totalRooms} {t.weekly.legend.rooms}</span>
+                                          <span className="text-gray-500">{occupied} {t.weekly.legend.couv}</span>
+                                          {(roomsDeficit > 0 || couvDeficitPersons > 0) && (
+                                            <span className="text-red-600 font-medium">⚠ Falta personal</span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
 
@@ -678,10 +683,10 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">{t.weekly.legend.morningAlone} ({pairsP1} {pairsP1 === 1 ? 'par' : 'pares'})</span>
-                                              {renderBalance(p1Balance, p1Capacity)}
-                                            </div>
+                                            <span className="text-xs text-gray-500">
+                                              {t.weekly.legend.morningAlone} ({pairsDay} {pairsDay === 1 ? 'par' : 'pares'})
+                                              {soloDay > 0 && <span className="text-yellow-600 ml-1">+{soloDay} solo</span>}
+                                            </span>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP1 + recouchDoneP1} {t.weekly.legend.rooms}</span>
@@ -704,10 +709,9 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">{t.weekly.legend.morningEvening} ({pairsP2} {pairsP2 === 1 ? 'par' : 'pares'})</span>
-                                              {renderBalance(p2Balance, p2Capacity)}
-                                            </div>
+                                            <span className="text-xs text-gray-500">
+                                              {t.weekly.legend.morningEvening} ({p2Pairs} {p2Pairs === 1 ? 'par' : 'pares'})
+                                            </span>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP2 + recouchDoneP2} {t.weekly.legend.rooms}</span>
@@ -728,10 +732,9 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">{t.weekly.legend.eveningFinishes} ({pairsP3} {pairsP3 === 1 ? 'par' : 'pares'})</span>
-                                              {renderBalance(p3Balance, p3Capacity)}
-                                            </div>
+                                            <span className="text-xs text-gray-500">
+                                              {t.weekly.legend.eveningFinishes} ({pairsEvening} {pairsEvening === 1 ? 'par' : 'pares'})
+                                            </span>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             {(departsDoneP3 + recouchDoneP3) > 0
@@ -742,7 +745,7 @@ export default function WeeklyPlanning() {
                                                 </>
                                               : <span className="text-green-600">{t.weekly.legend.noPending}</span>
                                             }
-                                            {pendingRooms > 0 && <span className="text-red-600 font-medium ml-2">⚠ {pendingRooms} sin hacer!</span>}
+                                            {roomsDeficit > 0 && <span className="text-red-600 font-medium ml-2">⚠ {roomsDeficit} {t.weekly.legend.rooms} sin hacer!</span>}
                                           </div>
                                           {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
                                         </div>
@@ -755,14 +758,22 @@ export default function WeeklyPlanning() {
                                       </div>
 
                                       {/* Couverture */}
-                                      <div className="px-3 py-2 flex items-start gap-3 bg-orange-50">
+                                      <div className={`px-3 py-2 flex items-start gap-3 ${couvDeficitPersons > 0 ? 'bg-red-50' : 'bg-orange-50'}`}>
                                         <div className="text-lg">🌙</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-orange-700 text-sm">19:00 - 21:30</span>
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">{t.weekly.legend.couvertures} ({numEvening} pers.)</span>
-                                              {renderBalance(couvBalance, couvCapacity)}
+                                              <span className="text-xs text-gray-500">{t.weekly.legend.couvertures}</span>
+                                              {couvDeficitPersons > 0 ? (
+                                                <span className="text-[10px] font-medium text-red-600">
+                                                  ⚠ {numEvening}/{minPersonsForCouv} pers. (faltan {couvDeficitPersons})
+                                                </span>
+                                              ) : (
+                                                <span className="text-[10px] font-medium text-green-600">
+                                                  ✓ {numEvening} pers.
+                                                </span>
+                                              )}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
