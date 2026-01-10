@@ -801,6 +801,10 @@ export default function WeeklyPlanning() {
 
                                 const dayNames = formatPairNames(dayPairInfo);
                                 const eveningNames = formatPairNames(eveningPairInfo);
+                                // Para couvertures: mostrar nombres individuales (no parejas)
+                                const eveningIndividualNames = day.assigned.EVENING
+                                  .map((a: any) => a.employee?.split(' ')[0] || '?')
+                                  .join(', ');
 
                                 // Usar valores calculados de parejas reales
                                 const soloDay = solosDay;
@@ -957,7 +961,7 @@ export default function WeeklyPlanning() {
                                             <span className="font-medium">{occupied} {t.weekly.legend.couvertures}</span>
                                             {numEvening > 0 && <span className="text-orange-600 ml-1">(~{Math.round(occupied/numEvening)} {t.weekly.legend.perPerson})</span>}
                                           </div>
-                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
+                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningIndividualNames}</div>}
                                         </div>
                                       </div>
 
