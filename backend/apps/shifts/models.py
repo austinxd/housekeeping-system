@@ -57,6 +57,16 @@ class ShiftTemplate(models.Model):
         help_text="Duración de pausa en minutos"
     )
 
+    # Horas objetivo y máximo
+    weekly_hours_target = models.PositiveIntegerField(
+        default=39,
+        help_text="Horas semanales objetivo para este turno"
+    )
+    max_daily_hours = models.PositiveIntegerField(
+        default=8,
+        help_text="Máximo de horas por día"
+    )
+
     # Horas efectivas de trabajo
     @property
     def total_minutes(self):
@@ -80,7 +90,6 @@ class ShiftTemplate(models.Model):
         ordering = ['role', 'time_block__order']
         verbose_name = 'Plantilla de Turno'
         verbose_name_plural = 'Plantillas de Turno'
-        unique_together = ['role', 'time_block']
 
     def __str__(self):
         return f"{self.code} ({self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')})"

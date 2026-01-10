@@ -5,16 +5,16 @@ from .models import TimeBlock, TaskType, Building, Zone, RoomType, Room, DayOfWe
 
 @admin.register(TimeBlock)
 class TimeBlockAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'order', 'is_active']
-    list_editable = ['order', 'is_active']
+    list_display = ['code', 'name', 'start_time', 'end_time', 'min_staff', 'helps_other_shift_hours', 'order', 'is_active']
+    list_editable = ['start_time', 'end_time', 'min_staff', 'helps_other_shift_hours', 'order', 'is_active']
     search_fields = ['code', 'name']
     ordering = ['order']
 
 
 @admin.register(TaskType)
 class TaskTypeAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'base_minutes', 'priority', 'is_active']
-    list_editable = ['base_minutes', 'priority', 'is_active']
+    list_display = ['code', 'name', 'base_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
+    list_editable = ['base_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
     list_filter = ['allowed_blocks', 'is_active']
     filter_horizontal = ['allowed_blocks']
     search_fields = ['code', 'name']

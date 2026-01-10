@@ -39,6 +39,11 @@ export const publishWeekPlan = async (id: number) => {
   return response.data;
 };
 
+export const deleteWeekPlan = async (id: number) => {
+  const response = await apiClient.delete(`/week-plans/${id}/`);
+  return response.data;
+};
+
 export const getWeekPlanByEmployee = async (id: number) => {
   const response = await apiClient.get(`/week-plans/${id}/by_employee/`);
   return response.data;
@@ -193,5 +198,116 @@ export const getRooms = async () => {
 
 export const getRoles = async () => {
   const response = await apiClient.get('/roles/');
+  return response.data;
+};
+
+// Forecast & WeekPlan generation
+export interface ForecastDay {
+  departures: number;
+  arrivals: number;
+  occupied: number;
+}
+
+export interface ForecastWeekPlanResult {
+  week_plan_id: number;
+  week_start: string;
+  status: string;
+  load_summary: {
+    total_hours: number;
+    day_shift_hours: number;
+    evening_shift_hours: number;
+  };
+  daily_load: Array<{
+    date: string;
+    day_name: string;
+    day_shift_hours: number;
+    evening_shift_hours: number;
+    day_persons_needed: number;
+    evening_persons_needed: number;
+  }>;
+  assignments: Array<{
+    employee: string;
+    date: string;
+    shift: string;
+    hours: number;
+  }>;
+}
+
+export const generateWeekPlanFromForecast = async (
+  weekStart: string,
+  forecast: ForecastDay[]
+): Promise<ForecastWeekPlanResult> => {
+  const response = await apiClient.post('/forecast/generate-weekplan/', {
+    week_start: weekStart,
+    forecast,
+  });
+  return response.data;
+};
+
+// Upload forecast PDF
+export interface ForecastUploadResult extends ForecastWeekPlanResult {
+  parsed_data: {
+    forecast: Array<ForecastDay & { date: string }>;
+  };
+}
+
+export const uploadForecastPDF = async (file: File): Promise<ForecastUploadResult> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await apiClient.post('/forecast/upload/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+// Load explanation for WeekPlan
+export interface DayExplanation {
+  date: string;
+  day_name: string;
+  day_short: string;
+  forecast: {
+    departures: number;
+    arrivals: number;
+    occupied: number;
+  };
+  load: {
+    day_shift: {
+      hours: number;
+      persons_needed: number;
+    };
+    evening_shift: {
+      hours: number;
+      persons_needed: number;
+    };
+    total_hours: number;
+  };
+  assigned: {
+    DAY: Array<{ employee: string; hours: number }>;
+    EVENING: Array<{ employee: string; hours: number }>;
+  };
+  explanation_text: string;
+}
+
+export interface LoadExplanation {
+  week_start: string;
+  totals: {
+    total_hours: number;
+    day_shift_hours: number;
+    evening_shift_hours: number;
+  };
+  days: DayExplanation[];
+}
+
+export const getWeekPlanLoadExplanation = async (id: number): Promise<LoadExplanation> => {
+  const response = await apiClient.get(`/week-plans/${id}/load_explanation/`);
+  return response.data;
+};
+
+// Shift Templates
+export const getShiftTemplates = async () => {
+  const response = await apiClient.get('/shift-templates/');
   return response.data;
 };

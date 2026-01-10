@@ -53,6 +53,18 @@ class WeekPlan(models.Model):
         help_text="Notas sobre el plan semanal"
     )
 
+    # Datos del forecast y cálculo de carga (para leyenda)
+    forecast_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Datos del forecast: departures, arrivals, occupied por día"
+    )
+    load_calculation = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Cálculo de carga: horas por turno, personas necesarias"
+    )
+
     class Meta:
         unique_together = ['week_start_date']
         ordering = ['-week_start_date']

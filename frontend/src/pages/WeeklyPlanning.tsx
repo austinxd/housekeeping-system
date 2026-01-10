@@ -1,24 +1,50 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getWeekPlans,
   getWeekPlan,
-  generateWeekPlan,
   publishWeekPlan,
+  deleteWeekPlan,
   getWeekPlanByEmployee,
+  uploadForecastPDF,
+  getWeekPlanLoadExplanation,
+  ForecastUploadResult,
 } from '../api/client';
 import { WeekPlan } from '../types';
-import { format, parseISO, startOfWeek, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format, parseISO, addDays } from 'date-fns';
+import { es, fr } from 'date-fns/locale';
 import { clsx } from 'clsx';
+import { useLanguage } from '../i18n';
+
+const SHIFT_COLORS: Record<string, string> = {
+  DAY: 'bg-blue-100 text-blue-800 border-blue-200',
+  EVENING: 'bg-orange-100 text-orange-800 border-orange-200',
+  NIGHT: 'bg-purple-100 text-purple-800 border-purple-200',
+};
+
+const getShiftColor = (shiftCode: string): string => {
+  if (shiftCode?.includes('MANANA') || shiftCode?.includes('DIA') || shiftCode?.includes('JOUR')) {
+    return SHIFT_COLORS.DAY;
+  }
+  if (shiftCode?.includes('TARDE') || shiftCode?.includes('SOIR')) {
+    return SHIFT_COLORS.EVENING;
+  }
+  if (shiftCode?.includes('NUIT') || shiftCode?.includes('NOCHE')) {
+    return SHIFT_COLORS.NIGHT;
+  }
+  return 'bg-gray-100 text-gray-800';
+};
 
 export default function WeeklyPlanning() {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'fr' ? fr : es;
+
   const queryClient = useQueryClient();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [newWeekStart, setNewWeekStart] = useState(() => {
-    const today = new Date();
-    return format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  });
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadResult, setUploadResult] = useState<ForecastUploadResult | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const { data: weekPlans, isLoading: loadingPlans } = useQuery({
@@ -26,7 +52,7 @@ export default function WeeklyPlanning() {
     queryFn: getWeekPlans,
   });
 
-  const { data: selectedPlan, isLoading: loadingPlan } = useQuery({
+  const { data: selectedPlan } = useQuery({
     queryKey: ['weekPlan', selectedPlanId],
     queryFn: () => getWeekPlan(selectedPlanId!),
     enabled: !!selectedPlanId,
@@ -38,15 +64,13 @@ export default function WeeklyPlanning() {
     enabled: !!selectedPlanId,
   });
 
-  // Mutations
-  const generateMutation = useMutation({
-    mutationFn: generateWeekPlan,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['weekPlans'] });
-      setSelectedPlanId(data.id);
-    },
+  const { data: loadExplanation } = useQuery({
+    queryKey: ['weekPlanLoadExplanation', selectedPlanId],
+    queryFn: () => getWeekPlanLoadExplanation(selectedPlanId!),
+    enabled: !!selectedPlanId,
   });
 
+  // Mutations
   const publishMutation = useMutation({
     mutationFn: publishWeekPlan,
     onSuccess: () => {
@@ -55,8 +79,50 @@ export default function WeeklyPlanning() {
     },
   });
 
-  const handleGenerate = () => {
-    generateMutation.mutate(newWeekStart);
+  const deleteMutation = useMutation({
+    mutationFn: deleteWeekPlan,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weekPlans'] });
+      setSelectedPlanId(null);
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: uploadForecastPDF,
+    onSuccess: (data) => {
+      setUploadResult(data);
+      queryClient.invalidateQueries({ queryKey: ['weekPlans'] });
+      setSelectedPlanId(data.week_plan_id);
+    },
+  });
+
+  const handleFileUpload = (file: File) => {
+    if (file && file.type === 'application/pdf') {
+      uploadMutation.mutate(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    handleFileUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragActive(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
   };
 
   const handlePublish = () => {
@@ -65,51 +131,191 @@ export default function WeeklyPlanning() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      DRAFT: 'badge-warning',
-      REVIEW: 'badge-info',
-      APPROVED: 'badge-success',
-      PUBLISHED: 'badge-success',
-      ARCHIVED: 'badge-secondary',
-    };
-    return <span className={`badge ${styles[status] || ''}`}>{status}</span>;
+  const handleDelete = () => {
+    if (selectedPlanId && confirm(t.weekly.confirmDelete || 'Are you sure?')) {
+      deleteMutation.mutate(selectedPlanId);
+    }
   };
 
-  // Get week days for header
+  const closeModal = () => {
+    setShowUploadModal(false);
+    setUploadResult(null);
+    uploadMutation.reset();
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      DRAFT: 'bg-yellow-100 text-yellow-800',
+      REVIEW: 'bg-blue-100 text-blue-800',
+      APPROVED: 'bg-green-100 text-green-800',
+      PUBLISHED: 'bg-green-100 text-green-800',
+      ARCHIVED: 'bg-gray-100 text-gray-800',
+    };
+    const statusKey = status.toLowerCase() as keyof typeof t.weekly.status;
+    const label = t.weekly.status[statusKey] || status;
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || ''}`}>
+        {label}
+      </span>
+    );
+  };
+
   const getWeekDays = (startDate: string) => {
     const start = parseISO(startDate);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  };
+
+  const getDayName = (index: number): string => {
+    const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+    return t.days[dayKeys[index]];
+  };
+
+  const getShiftDisplay = (shift: any) => {
+    if (!shift || shift.is_day_off) return null;
+
+    const colorClass = getShiftColor(shift.shift);
+
+    return (
+      <div className={`px-2 py-1 rounded border text-xs ${colorClass}`}>
+        <div className="font-medium">{shift.start_time} - {shift.end_time}</div>
+      </div>
+    );
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Planning Semanal</h2>
-        <div className="flex items-center space-x-4">
-          <input
-            type="date"
-            value={newWeekStart}
-            onChange={(e) => setNewWeekStart(e.target.value)}
-            className="input w-40"
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={generateMutation.isPending}
-            className="btn btn-primary"
-          >
-            {generateMutation.isPending ? 'Generando...' : 'Generar Plan'}
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold text-gray-900">{t.weekly.title}</h2>
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+        >
+          {t.weekly.uploadForecast}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">{t.weekly.uploadTitle}</h3>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Upload Area */}
+              {!uploadResult && !uploadMutation.isPending && (
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={clsx(
+                    'border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors',
+                    dragActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  )}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <div className="text-5xl mb-4">📄</div>
+                  <p className="text-lg font-medium text-gray-700 mb-2">
+                    {t.weekly.dragPdf}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {t.weekly.clickToSelect}
+                  </p>
+                </div>
+              )}
+
+              {/* Loading */}
+              {uploadMutation.isPending && (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">{t.weekly.processingPdf}</p>
+                </div>
+              )}
+
+              {/* Error */}
+              {uploadMutation.isError && (
+                <div className="mb-6 p-4 bg-red-50 rounded-lg">
+                  <p className="text-red-700 font-medium">{t.weekly.errorProcessing}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {(uploadMutation.error as Error)?.message || t.weekly.unknownError}
+                  </p>
+                  <button
+                    onClick={() => uploadMutation.reset()}
+                    className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+                  >
+                    {t.weekly.tryAgain}
+                  </button>
+                </div>
+              )}
+
+              {/* Success Result */}
+              {uploadResult && (
+                <div className="space-y-6">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-3">
+                      {t.weekly.planGenerated}
+                    </h4>
+
+                    <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-gray-500 text-xs">{t.weekly.totalHours}</div>
+                        <div className="font-bold text-lg">
+                          {uploadResult.load_summary.total_hours.toFixed(1)}h
+                        </div>
+                      </div>
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-gray-500 text-xs">{t.weekly.dayShift}</div>
+                        <div className="font-bold text-lg text-blue-600">
+                          {uploadResult.load_summary.day_shift_hours.toFixed(1)}h
+                        </div>
+                      </div>
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-gray-500 text-xs">{t.weekly.eveningShift}</div>
+                        <div className="font-bold text-lg text-orange-600">
+                          {uploadResult.load_summary.evening_shift_hours.toFixed(1)}h
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={closeModal}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
+                    >
+                      {t.weekly.viewPlan}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Plans List */}
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Planes</h3>
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-lg font-semibold mb-4">{t.weekly.plans}</h3>
           {loadingPlans ? (
-            <p className="text-gray-500">Cargando...</p>
+            <p className="text-gray-500">{t.common.loading}</p>
           ) : (
             <div className="space-y-2">
               {weekPlans?.results?.map((plan: WeekPlan) => (
@@ -117,132 +323,313 @@ export default function WeeklyPlanning() {
                   key={plan.id}
                   onClick={() => setSelectedPlanId(plan.id)}
                   className={clsx(
-                    'w-full text-left p-3 rounded-lg transition-colors',
+                    'w-full text-left p-3 rounded-lg transition-colors border',
                     selectedPlanId === plan.id
-                      ? 'bg-primary-100 border-2 border-primary-500'
-                      : 'bg-gray-50 hover:bg-gray-100'
+                      ? 'bg-blue-50 border-blue-500'
+                      : 'bg-gray-50 hover:bg-gray-100 border-transparent'
                   )}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">
-                      {format(parseISO(plan.week_start_date), 'd MMM', { locale: es })}
+                      {format(parseISO(plan.week_start_date), 'd MMM yyyy', { locale: dateLocale })}
                     </span>
                     {getStatusBadge(plan.status)}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {plan.name || 'Sin nombre'}
                   </div>
                 </button>
               ))}
               {(!weekPlans?.results || weekPlans.results.length === 0) && (
-                <p className="text-gray-500 text-sm">No hay planes creados</p>
+                <p className="text-gray-500 text-sm">{t.weekly.noPlans}</p>
               )}
             </div>
           )}
         </div>
 
         {/* Plan Detail */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-4">
           {selectedPlanId && selectedPlan ? (
             <div className="space-y-4">
               {/* Plan Header */}
-              <div className="card">
+              <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-semibold">
-                      Semana {format(parseISO(selectedPlan.week_start_date), 'd MMMM', { locale: es })}
+                    <h3 className="text-xl font-bold">
+                      {t.weekly.weekOf} {format(parseISO(selectedPlan.week_start_date), 'd MMMM yyyy', { locale: dateLocale })}
                     </h3>
-                    <div className="flex items-center space-x-2 mt-1">
+                    <div className="flex items-center gap-3 mt-2">
                       {getStatusBadge(selectedPlan.status)}
                       <span className="text-sm text-gray-500">
-                        {selectedPlan.total_assigned_hours}h asignadas
+                        {selectedPlan.total_assigned_hours || 0}{t.weekly.hoursAssigned}
                       </span>
                     </div>
                   </div>
                   {selectedPlan.status === 'DRAFT' && (
-                    <button
-                      onClick={handlePublish}
-                      disabled={publishMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {publishMutation.isPending ? 'Publicando...' : 'Publicar'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isPending}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+                      >
+                        {deleteMutation.isPending ? t.weekly.deleting : t.weekly.delete}
+                      </button>
+                      <button
+                        onClick={handlePublish}
+                        disabled={publishMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+                      >
+                        {publishMutation.isPending ? t.weekly.publishing : t.weekly.publish}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Schedule Grid */}
-              {byEmployee && (
-                <div className="card overflow-x-auto">
-                  <h4 className="font-semibold mb-4">Horarios por Empleado</h4>
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="text-left p-2 bg-gray-50">Empleado</th>
-                        {getWeekDays(selectedPlan.week_start_date).map((day) => (
-                          <th key={day.toISOString()} className="text-center p-2 bg-gray-50">
-                            <div>{format(day, 'EEE', { locale: es })}</div>
-                            <div className="text-xs text-gray-500">
-                              {format(day, 'd', { locale: es })}
-                            </div>
-                          </th>
-                        ))}
-                        <th className="text-center p-2 bg-gray-50">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(byEmployee).map(([key, emp]: [string, any]) => {
-                        const weekDays = getWeekDays(selectedPlan.week_start_date);
-                        const shiftsByDate: Record<string, any> = {};
-                        emp.shifts.forEach((shift: any) => {
-                          shiftsByDate[shift.date] = shift;
-                        });
+              {byEmployee && Object.keys(byEmployee).length > 0 && (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="p-4 border-b">
+                    <h4 className="font-semibold">{t.weekly.scheduleByEmployee}</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-left p-3 font-semibold border-b w-48">{t.weekly.employee}</th>
+                          {getWeekDays(selectedPlan.week_start_date).map((day) => (
+                            <th key={day.toISOString()} className="text-center p-3 font-semibold border-b min-w-24">
+                              <div className="text-sm">{format(day, 'EEE', { locale: dateLocale })}</div>
+                              <div className="text-xs text-gray-500 font-normal">
+                                {format(day, 'd MMM', { locale: dateLocale })}
+                              </div>
+                            </th>
+                          ))}
+                          <th className="text-center p-3 font-semibold border-b w-20">{t.common.total}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(byEmployee).map(([key, emp]: [string, any]) => {
+                          const weekDays = getWeekDays(selectedPlan.week_start_date);
+                          const shiftsByDate: Record<string, any> = {};
+                          emp.shifts.forEach((shift: any) => {
+                            shiftsByDate[shift.date] = shift;
+                          });
 
-                        const totalHours = emp.shifts.reduce(
-                          (sum: number, s: any) => sum + (s.is_day_off ? 0 : s.hours),
-                          0
-                        );
+                          const totalHours = emp.shifts.reduce(
+                            (sum: number, s: any) => sum + (s.is_day_off ? 0 : s.hours),
+                            0
+                          );
 
-                        return (
-                          <tr key={key} className="border-t">
-                            <td className="p-2">
-                              <div className="font-medium">{emp.name}</div>
-                              <div className="text-xs text-gray-500">{emp.type}</div>
-                            </td>
-                            {weekDays.map((day) => {
-                              const dateStr = format(day, 'yyyy-MM-dd');
-                              const shift = shiftsByDate[dateStr];
+                          return (
+                            <tr key={key} className="border-b hover:bg-gray-50">
+                              <td className="p-3">
+                                <div className="font-medium text-gray-900">{emp.name}</div>
+                                <div className="text-xs text-gray-500">{emp.role}</div>
+                              </td>
+                              {weekDays.map((day) => {
+                                const dateStr = format(day, 'yyyy-MM-dd');
+                                const shift = shiftsByDate[dateStr];
 
-                              return (
-                                <td key={dateStr} className="text-center p-2">
-                                  {shift ? (
-                                    shift.is_day_off ? (
-                                      <span className="text-gray-400">-</span>
+                                return (
+                                  <td key={dateStr} className="text-center p-2">
+                                    {shift ? (
+                                      shift.is_day_off ? (
+                                        <span className="text-gray-300 text-lg">-</span>
+                                      ) : (
+                                        getShiftDisplay(shift)
+                                      )
                                     ) : (
-                                      <div>
-                                        <div className="text-sm font-medium">{shift.shift}</div>
-                                        <div className="text-xs text-gray-500">{shift.hours}h</div>
+                                      <span className="inline-block px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-medium">
+                                        {t.common.free}
+                                      </span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td className="text-center p-3 font-bold text-gray-900">
+                                {totalHours}h
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Legend - Load Explanation */}
+              {loadExplanation && loadExplanation.days.length > 0 && (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h4 className="font-semibold">{t.weekly.legend.title}</h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {t.weekly.legend.totalWeek}: {loadExplanation.totals.total_hours}h
+                      ({t.weekly.legend.morning}: {loadExplanation.totals.day_shift_hours}h, {t.weekly.legend.evening}: {loadExplanation.totals.evening_shift_hours}h)
+                    </p>
+                  </div>
+                  <div className="divide-y">
+                    {loadExplanation.days.map((day, index) => {
+                      const stays = Math.max(0, day.forecast.occupied - day.forecast.arrivals);
+                      return (
+                        <div key={day.date} className="p-4">
+                          <div className="flex items-start gap-4">
+                            {/* Day Header */}
+                            <div className="w-28 flex-shrink-0">
+                              <div className="font-bold text-gray-900">{getDayName(index)}</div>
+                              <div className="text-sm text-gray-500">
+                                {format(parseISO(day.date), 'd MMM', { locale: dateLocale })}
+                              </div>
+                            </div>
+
+                            {/* Forecast Data */}
+                            <div className="flex-1">
+                              <div className="flex flex-wrap gap-3 mb-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 text-sm">
+                                  {day.forecast.departures} {t.weekly.legend.departures}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 text-sm">
+                                  {day.forecast.arrivals} {t.weekly.legend.arrivals}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 text-sm">
+                                  {day.forecast.occupied} {t.weekly.legend.occupied}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-1 rounded bg-purple-50 text-purple-700 text-sm">
+                                  {stays} {t.weekly.legend.stays}
+                                </span>
+                              </div>
+
+                              {/* Distribución del día */}
+                              {(() => {
+                                const numDay = day.assigned.DAY.length;
+                                const numEvening = day.assigned.EVENING.length;
+                                const departures = day.forecast.departures;
+                                const totalRooms = departures + stays;
+                                const occupied = day.forecast.occupied;
+
+                                // Parejas por período
+                                const pairsP1 = Math.max(1, Math.floor(numDay / 2));
+                                const pairsP2 = Math.max(1, Math.floor((numDay + numEvening) / 2));
+                                const pairsP3 = Math.max(1, Math.floor(numEvening / 2));
+
+                                // Capacidad: DEPART 50min, RECOUCH 20min
+                                const departsPerHour = 1.2;
+                                const recouchPerHour = 3;
+
+                                // P1: 09:00-12:30 (3.5h)
+                                const departsDoneP1 = Math.min(departures, Math.floor(pairsP1 * 3.5 * departsPerHour));
+                                const hoursLeftP1 = 3.5 - (departsDoneP1 / departsPerHour / pairsP1);
+                                const recouchDoneP1 = Math.min(stays, Math.floor(pairsP1 * hoursLeftP1 * recouchPerHour));
+
+                                // P2: 13:30-17:00 (3.5h)
+                                const departsLeft = departures - departsDoneP1;
+                                const recouchLeft = stays - recouchDoneP1;
+                                const departsDoneP2 = Math.min(departsLeft, Math.floor(pairsP2 * 3.5 * departsPerHour));
+                                const hoursLeftP2 = 3.5 - (departsDoneP2 / departsPerHour / pairsP2);
+                                const recouchDoneP2 = Math.min(recouchLeft, Math.floor(pairsP2 * hoursLeftP2 * recouchPerHour));
+
+                                // P3: 17:00-19:00 (2h)
+                                const recouchLeftP3 = Math.max(0, stays - recouchDoneP1 - recouchDoneP2);
+
+                                const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
+                                const eveningNames = day.assigned.EVENING.map(a => a.employee?.split(' ')[0]).join(' + ');
+
+                                return (
+                                  <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-200 overflow-hidden">
+                                    {/* Header */}
+                                    <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="font-semibold text-gray-700">Distribución del día</span>
+                                        <span className="text-gray-500">{totalRooms} hab + {occupied} couv</span>
                                       </div>
-                                    )
-                                  ) : (
-                                    <span className="text-gray-300">-</span>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            <td className="text-center p-2 font-semibold">{totalHours}h</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                    </div>
+
+                                    <div className="divide-y divide-gray-100">
+                                      {/* Período 1 */}
+                                      <div className="px-3 py-2 flex items-start gap-3">
+                                        <div className="text-lg">🌅</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-baseline justify-between">
+                                            <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
+                                            <span className="text-xs text-gray-500">Mañana sola</span>
+                                          </div>
+                                          <div className="text-xs text-gray-600 mt-0.5">
+                                            <span className="font-medium">{departsDoneP1 + recouchDoneP1} hab</span>
+                                            {departsDoneP1 > 0 && <span className="text-red-600 ml-1">({departsDoneP1} depart)</span>}
+                                            {recouchDoneP1 > 0 && <span className="text-green-600 ml-1">({recouchDoneP1} recouch)</span>}
+                                          </div>
+                                          {numDay > 0 && <div className="text-xs text-blue-600 mt-0.5">{dayNames}</div>}
+                                        </div>
+                                      </div>
+
+                                      {/* Almuerzo */}
+                                      <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
+                                        <div className="text-base">🍽️</div>
+                                        <span className="text-xs text-gray-500">12:30 - 13:30 Almuerzo</span>
+                                      </div>
+
+                                      {/* Período 2 */}
+                                      <div className="px-3 py-2 flex items-start gap-3">
+                                        <div className="text-lg">🔄</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-baseline justify-between">
+                                            <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
+                                            <span className="text-xs text-gray-500">Mañana + Tarde</span>
+                                          </div>
+                                          <div className="text-xs text-gray-600 mt-0.5">
+                                            <span className="font-medium">{departsDoneP2 + recouchDoneP2} hab</span>
+                                            {departsDoneP2 > 0 && <span className="text-red-600 ml-1">({departsDoneP2} depart)</span>}
+                                            {recouchDoneP2 > 0 && <span className="text-green-600 ml-1">({recouchDoneP2} recouch)</span>}
+                                          </div>
+                                          <div className="text-xs mt-0.5">
+                                            {numDay > 0 && <span className="text-blue-600">{dayNames}</span>}
+                                            {numDay > 0 && numEvening > 0 && <span className="text-gray-400 mx-1">·</span>}
+                                            {numEvening > 0 && <span className="text-orange-600">{eveningNames}</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Período 3 - solo si hay pendientes */}
+                                      {recouchLeftP3 > 0 && (
+                                        <div className="px-3 py-1.5 bg-yellow-50 flex items-center gap-3">
+                                          <div className="text-base">⏰</div>
+                                          <div className="text-xs text-yellow-700">
+                                            17:00 - 19:00 Tarde termina <span className="font-medium">{recouchLeftP3} recouch</span>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Couverture */}
+                                      <div className="px-3 py-2 flex items-start gap-3 bg-orange-50">
+                                        <div className="text-lg">🌙</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-baseline justify-between">
+                                            <span className="font-medium text-orange-700 text-sm">19:00 - 21:30</span>
+                                            <span className="text-xs text-gray-500">Couverture</span>
+                                          </div>
+                                          <div className="text-xs text-gray-600 mt-0.5">
+                                            <span className="font-medium">{occupied} couvertures</span>
+                                            {numEvening > 0 && <span className="text-orange-600 ml-1">(~{Math.round(occupied/numEvening)} c/u)</span>}
+                                          </div>
+                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="card text-center py-12">
-              <p className="text-gray-500">
-                Selecciona un plan de la lista o genera uno nuevo
+            <div className="bg-white rounded-lg shadow p-12 text-center">
+              <div className="text-5xl mb-4">📅</div>
+              <p className="text-gray-500 text-lg">
+                {t.weekly.selectPlan}
               </p>
             </div>
           )}

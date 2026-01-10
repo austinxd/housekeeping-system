@@ -54,4 +54,8 @@ urlpatterns = [
     path('calculate/load/', views.LoadCalculationView.as_view(), name='calculate-load'),
     path('calculate/capacity/', views.CapacityCalculationView.as_view(), name='calculate-capacity'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+
+    # Forecast & WeekPlan generation
+    path('forecast/generate-weekplan/', views.ForecastWeekPlanView.as_view(), name='forecast-generate-weekplan'),
+    path('forecast/upload/', views.ForecastUploadView.as_view(), name='forecast-upload'),
 ]

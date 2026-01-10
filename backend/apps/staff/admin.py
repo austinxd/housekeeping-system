@@ -33,6 +33,13 @@ class EmployeeAdmin(admin.ModelAdmin):
     filter_horizontal = ['allowed_blocks', 'fixed_days_off', 'eligible_tasks']
     inlines = [UnavailabilityInline]
 
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        """Make eligible_tasks and fixed_days_off optional."""
+        formfield = super().formfield_for_manytomany(db_field, request, **kwargs)
+        if db_field.name in ['eligible_tasks', 'fixed_days_off']:
+            formfield.required = False
+        return formfield
+
     fieldsets = (
         ('Identificación', {
             'fields': ('employee_code', 'first_name', 'last_name', 'role')
@@ -40,8 +47,10 @@ class EmployeeAdmin(admin.ModelAdmin):
         ('Horario', {
             'fields': ('weekly_hours_target', 'elasticity', 'allowed_blocks', 'fixed_days_off')
         }),
-        ('Capacidades', {
-            'fields': ('eligible_tasks', 'can_work_night')
+        ('Capacidades (solo para roles que limpian habitaciones)', {
+            'fields': ('eligible_tasks', 'can_work_night'),
+            'classes': ('collapse',),
+            'description': 'Opcional para supervisores (GG, Assistante, Gouv. Soir)'
         }),
         ('Estado', {
             'fields': ('is_active', 'hire_date', 'notes')

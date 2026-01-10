@@ -10,7 +10,7 @@ from apps.core.models import TimeBlock, TaskType, DayOfWeek
 class Role(models.Model):
     """
     Roles del personal.
-    Ejemplos: HK_FDC (Femme de Chambre), EQUIPIER, GOUVERNANTE, ASSISTANTE
+    Ejemplos: FDC, VDC, EQUIPIER_JOUR, EQUIPIER_NUIT, GG, ASST_GG, GOUV_SOIR
     """
     code = models.CharField(max_length=30, unique=True)
     name = models.CharField(max_length=100)
@@ -20,6 +20,11 @@ class Role(models.Model):
         TimeBlock,
         related_name='roles',
         help_text="Bloques temporales donde este rol puede trabajar"
+    )
+    # ¿Este rol limpia habitaciones?
+    can_clean_rooms = models.BooleanField(
+        default=False,
+        help_text="¿Este rol realiza limpieza de habitaciones?"
     )
     # Orden para mostrar en UI
     display_order = models.PositiveIntegerField(default=0)

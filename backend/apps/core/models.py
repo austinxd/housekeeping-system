@@ -25,9 +25,32 @@ class TimeBlock(models.Model):
         blank=True,
         help_text="Descripción del bloque"
     )
+    start_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Hora de inicio del bloque (ej: 09:00)"
+    )
+    end_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Hora de fin del bloque (ej: 18:30)"
+    )
     order = models.PositiveIntegerField(
         default=0,
         help_text="Orden de aparición (menor = primero)"
+    )
+    # Mínimo de personas por turno (para trabajo en parejas)
+    min_staff = models.PositiveIntegerField(
+        default=2,
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
+        help_text="Mínimo de personas por turno (ej: 2 para trabajo en parejas)"
+    )
+    # Horas que este turno ayuda con tareas del otro turno
+    helps_other_shift_hours = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        default=0,
+        help_text="Horas que ayuda con tareas del turno DAY (ej: 4.5 para EVENING)"
     )
     is_active = models.BooleanField(default=True)
 
@@ -64,10 +87,28 @@ class TaskType(models.Model):
         related_name='task_types',
         help_text="Bloques temporales donde puede realizarse esta tarea"
     )
-    # Tiempo base en minutos
+    # Tiempo base en minutos (para completar la tarea con persons_required personas)
     base_minutes = models.PositiveIntegerField(
         default=30,
-        help_text="Tiempo base en minutos para esta tarea"
+        help_text="Tiempo en minutos para completar la tarea (con el número de personas indicado)"
+    )
+    # Personas requeridas para cumplir el tiempo base
+    persons_required = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Personas necesarias para completar en base_minutes (ej: 2 para DEPART)"
+    )
+    # Hora más temprana para iniciar esta tarea (ej: couverture no antes de 19:00)
+    earliest_start_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Hora más temprana para esta tarea (ej: 19:00 para couverture)"
+    )
+    # Hora límite para terminar esta tarea (ej: recouch antes de 18:30)
+    latest_end_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Hora límite para terminar (ej: 18:30 para depart/recouch)"
     )
     # Prioridad para ordenar (menor = más prioritario)
     priority = models.PositiveIntegerField(
