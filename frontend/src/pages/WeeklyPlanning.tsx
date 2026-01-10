@@ -686,11 +686,25 @@ export default function WeeklyPlanning() {
                                 p3Used += recouchDoneP3 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP3;
 
+                                // ========== CALCULAR TIEMPO SOBRANTE POR PERÍODO ==========
+
+                                const p1Spare = p1Capacity - p1Used;  // minutos sobrantes en P1
+                                const p2Spare = p2Capacity - p2Used;  // minutos sobrantes en P2
+                                const p3Spare = p3Capacity - p3Used;  // minutos sobrantes en P3
+                                const couvSpare = couvCapacity - totalCouvWorkMin;  // minutos sobrantes/faltantes en couv
+
                                 // ========== VERIFICAR DÉFICIT ==========
 
                                 const roomsDeficit = departsLeft + recouchesLeft; // habitaciones sin hacer
-                                const couvDeficit = Math.max(0, totalCouvWorkMin - couvCapacity); // minutos faltantes couv
+                                const couvDeficit = Math.max(0, -couvSpare); // minutos faltantes couv (si es negativo)
                                 const couvDeficitPersons = couvDeficit > 0 ? Math.ceil(couvDeficit / COUV_PERIOD_MIN) : 0;
+
+                                // Helper para formatear tiempo sobrante
+                                const formatSpare = (minutes: number) => {
+                                  if (minutes === 0) return null;
+                                  const hours = (minutes / 60).toFixed(1);
+                                  return minutes > 0 ? `+${hours}h` : `${hours}h`;
+                                };
 
                                 const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
                                 const eveningNames = day.assigned.EVENING.map(a => a.employee?.split(' ')[0]).join(' + ');
@@ -723,10 +737,17 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
-                                            <span className="text-xs text-gray-500">
-                                              {t.weekly.legend.morningAlone} ({pairsDay} {pairsDay === 1 ? 'par' : 'pares'})
-                                              {soloDay > 0 && <span className="text-yellow-600 ml-1">+{soloDay} solo</span>}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">
+                                                {t.weekly.legend.morningAlone} ({pairsDay} {pairsDay === 1 ? 'par' : 'pares'})
+                                                {soloDay > 0 && <span className="text-yellow-600 ml-1">+{soloDay} solo</span>}
+                                              </span>
+                                              {formatSpare(p1Spare) && (
+                                                <span className={`text-[10px] font-medium ${p1Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {formatSpare(p1Spare)}
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP1 + recouchDoneP1} {t.weekly.legend.rooms}</span>
@@ -749,10 +770,17 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
-                                            <span className="text-xs text-gray-500">
-                                              {t.weekly.legend.morningEvening} ({p2Pairs} {p2Pairs === 1 ? 'par' : 'pares'})
-                                              {soloP2 > 0 && <span className="text-yellow-600 ml-1">+{soloP2} solo</span>}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">
+                                                {t.weekly.legend.morningEvening} ({p2Pairs} {p2Pairs === 1 ? 'par' : 'pares'})
+                                                {soloP2 > 0 && <span className="text-yellow-600 ml-1">+{soloP2} solo</span>}
+                                              </span>
+                                              {formatSpare(p2Spare) && (
+                                                <span className={`text-[10px] font-medium ${p2Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {formatSpare(p2Spare)}
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             <span className="font-medium">{departsDoneP2 + recouchDoneP2} {t.weekly.legend.rooms}</span>
@@ -773,10 +801,17 @@ export default function WeeklyPlanning() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
                                             <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
-                                            <span className="text-xs text-gray-500">
-                                              {t.weekly.legend.eveningFinishes} ({pairsEvening} {pairsEvening === 1 ? 'par' : 'pares'})
-                                              {soloEvening > 0 && <span className="text-yellow-600 ml-1">+{soloEvening} solo</span>}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">
+                                                {t.weekly.legend.eveningFinishes} ({pairsEvening} {pairsEvening === 1 ? 'par' : 'pares'})
+                                                {soloEvening > 0 && <span className="text-yellow-600 ml-1">+{soloEvening} solo</span>}
+                                              </span>
+                                              {formatSpare(p3Spare) && (
+                                                <span className={`text-[10px] font-medium ${p3Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {formatSpare(p3Spare)}
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
                                             {(departsDoneP3 + recouchDoneP3) > 0
@@ -811,11 +846,16 @@ export default function WeeklyPlanning() {
                                               <span className="text-xs text-gray-500">{t.weekly.legend.couvertures}</span>
                                               {couvDeficitPersons > 0 ? (
                                                 <span className="text-[10px] font-medium text-red-600">
-                                                  ⚠ {numEvening}/{minPersonsForCouv} pers. (faltan {couvDeficitPersons})
+                                                  ⚠ {numEvening}/{minPersonsForCouv} pers.
                                                 </span>
                                               ) : (
                                                 <span className="text-[10px] font-medium text-green-600">
                                                   ✓ {numEvening} pers.
+                                                </span>
+                                              )}
+                                              {formatSpare(couvSpare) && (
+                                                <span className={`text-[10px] font-medium ${couvSpare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {formatSpare(couvSpare)}
                                                 </span>
                                               )}
                                             </div>
