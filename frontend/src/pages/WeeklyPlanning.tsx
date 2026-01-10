@@ -11,10 +11,32 @@ import {
   ForecastUploadResult,
 } from '../api/client';
 import { WeekPlan } from '../types';
-import { format, parseISO, addDays } from 'date-fns';
+import { format, parseISO, addDays, isValid } from 'date-fns';
 import { es, fr } from 'date-fns/locale';
 import { clsx } from 'clsx';
 import { useLanguage } from '../i18n';
+
+// Safe date parsing to avoid crashes
+const safeParseISO = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  try {
+    const date = parseISO(dateStr);
+    return isValid(date) ? date : null;
+  } catch {
+    return null;
+  }
+};
+
+const safeFormat = (date: Date | string | null | undefined, formatStr: string, options?: { locale?: Locale }): string => {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (!isValid(d)) return '-';
+    return format(d, formatStr, options);
+  } catch {
+    return '-';
+  }
+};
 
 const SHIFT_COLORS: Record<string, string> = {
   DAY: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -161,7 +183,8 @@ export default function WeeklyPlanning() {
   };
 
   const getWeekDays = (startDate: string) => {
-    const start = parseISO(startDate);
+    const start = safeParseISO(startDate);
+    if (!start) return [];
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   };
 
@@ -344,7 +367,7 @@ export default function WeeklyPlanning() {
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">
-                      {format(parseISO(plan.week_start_date), 'd MMM yyyy', { locale: dateLocale })}
+                      {safeFormat(plan.week_start_date, 'd MMM yyyy', { locale: dateLocale })}
                     </span>
                     {getStatusBadge(plan.status)}
                   </div>
@@ -366,7 +389,7 @@ export default function WeeklyPlanning() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-xl font-bold">
-                      {t.weekly.weekOf} {format(parseISO(selectedPlan.week_start_date), 'd MMMM yyyy', { locale: dateLocale })}
+                      {t.weekly.weekOf} {safeFormat(selectedPlan.week_start_date, 'd MMMM yyyy', { locale: dateLocale })}
                     </h3>
                     <div className="flex items-center gap-3 mt-2">
                       {getStatusBadge(selectedPlan.status)}
@@ -528,7 +551,7 @@ export default function WeeklyPlanning() {
                             <div className="w-28 flex-shrink-0">
                               <div className="font-bold text-gray-900">{getDayName(index)}</div>
                               <div className="text-sm text-gray-500">
-                                {format(parseISO(day.date), 'd MMM', { locale: dateLocale })}
+                                {safeFormat(day.date, 'd MMM', { locale: dateLocale })}
                               </div>
                             </div>
 
