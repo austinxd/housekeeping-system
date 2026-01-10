@@ -10,6 +10,7 @@ import {
   getWeekPlanLoadExplanation,
   getTaskTypes,
   getTimeBlocks,
+  getTeams,
   ForecastUploadResult,
 } from '../api/client';
 import { WeekPlan } from '../types';
@@ -104,6 +105,12 @@ export default function WeeklyPlanning() {
   useQuery({
     queryKey: ['timeBlocks'],
     queryFn: getTimeBlocks,
+  });
+
+  // Teams para calcular parejas reales
+  const { data: teams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: getTeams,
   });
 
   // Mutations
@@ -646,9 +653,79 @@ export default function WeeklyPlanning() {
                                 // Personas mínimas necesarias para couvertures
                                 const minPersonsForCouv = Math.ceil(totalCouvWorkMin / COUV_PERIOD_MIN);
 
-                                // Parejas asignadas
-                                const pairsDay = Math.floor(numDay / 2);
-                                const pairsEvening = Math.floor(numEvening / 2);
+                                // ========== CALCULAR PAREJAS REALES ==========
+                                // teams puede ser array directo o { results: [...] }
+                                const teamsArray = Array.isArray(teams) ? teams : teams?.results || [];
+
+                                // Función para calcular parejas en un turno
+                                const calculatePairs = (assignedEmployees: any[]) => {
+                                  const employeeIds = assignedEmployees.map(a => a.employee_id || a.id);
+                                  const employeeNames = assignedEmployees.map(a => a.employee?.split(' ')[0] || a.employee);
+
+                                  let configuredPairs: string[][] = [];  // Parejas de equipos configurados
+                                  let tempPairs: string[][] = [];        // Parejas temporales
+                                  let solos: string[] = [];              // Personas sin pareja
+                                  let usedEmployees = new Set<number>();
+
+                                  // 1. Buscar parejas configuradas (equipos donde ambos miembros están asignados)
+                                  teamsArray.forEach((team: any) => {
+                                    const memberIds = team.members?.map((m: any) => m.id) ||
+                                                     team.member_ids || [];
+                                    const assignedMembers = memberIds.filter((id: number) => employeeIds.includes(id));
+
+                                    // Si al menos 2 miembros del equipo están asignados, forman pareja
+                                    if (assignedMembers.length >= 2) {
+                                      // Tomar los primeros 2
+                                      const pair = assignedMembers.slice(0, 2);
+                                      pair.forEach((id: number) => usedEmployees.add(id));
+
+                                      // Obtener nombres
+                                      const pairNames = pair.map((id: number) => {
+                                        const idx = employeeIds.indexOf(id);
+                                        return idx >= 0 ? employeeNames[idx] : '?';
+                                      });
+                                      configuredPairs.push(pairNames);
+                                    }
+                                  });
+
+                                  // 2. Empleados sin pareja configurada pueden formar parejas temporales
+                                  const remainingEmployees = assignedEmployees.filter(
+                                    a => !usedEmployees.has(a.employee_id || a.id)
+                                  );
+
+                                  // Formar parejas temporales con los restantes
+                                  for (let i = 0; i < remainingEmployees.length; i += 2) {
+                                    if (i + 1 < remainingEmployees.length) {
+                                      tempPairs.push([
+                                        remainingEmployees[i].employee?.split(' ')[0] || '?',
+                                        remainingEmployees[i + 1].employee?.split(' ')[0] || '?'
+                                      ]);
+                                    } else {
+                                      // Impar - queda solo
+                                      solos.push(remainingEmployees[i].employee?.split(' ')[0] || '?');
+                                    }
+                                  }
+
+                                  return {
+                                    configuredPairs,
+                                    tempPairs,
+                                    solos,
+                                    totalPairs: configuredPairs.length + tempPairs.length,
+                                    totalSolos: solos.length
+                                  };
+                                };
+
+                                const dayPairInfo = calculatePairs(day.assigned.DAY);
+                                const eveningPairInfo = calculatePairs(day.assigned.EVENING);
+                                // P2: combinar ambos turnos - solos pueden formar parejas temporales entre sí
+                                const p2PairInfo = calculatePairs([...day.assigned.DAY, ...day.assigned.EVENING]);
+
+                                const pairsDay = dayPairInfo.totalPairs;
+                                const pairsEvening = eveningPairInfo.totalPairs;
+                                const pairsP2 = p2PairInfo.totalPairs;  // Parejas combinadas en P2
+                                const solosDay = dayPairInfo.totalSolos;
+                                const solosEvening = eveningPairInfo.totalSolos;
+                                const solosP2 = p2PairInfo.totalSolos;
 
                                 // Capacidad para couvertures
                                 const couvCapacity = numEvening * COUV_PERIOD_MIN;
@@ -667,8 +744,8 @@ export default function WeeklyPlanning() {
                                 p1Used += recouchDoneP1 * RECOUCH_MIN;
                                 recouchesLeft -= recouchDoneP1;
 
-                                // P2: Mañana + Tarde juntos (ambas parejas trabajan)
-                                const p2Pairs = pairsDay + pairsEvening;
+                                // P2: Mañana + Tarde juntos (parejas combinadas - solos pueden emparejarse)
+                                const p2Pairs = pairsP2;
                                 const p2Capacity = p2Pairs * P2_MIN;
                                 const departsDoneP2 = Math.min(departsLeft, Math.floor(p2Capacity / DEPART_MIN));
                                 let p2Used = departsDoneP2 * DEPART_MIN;
@@ -713,13 +790,22 @@ export default function WeeklyPlanning() {
                                   return `${sign}${hours}h`;
                                 };
 
-                                const dayNames = day.assigned.DAY.map(a => a.employee?.split(' ')[0]).join(' + ');
-                                const eveningNames = day.assigned.EVENING.map(a => a.employee?.split(' ')[0]).join(' + ');
+                                // Nombres para mostrar (agrupados por parejas)
+                                const formatPairNames = (pairInfo: typeof dayPairInfo) => {
+                                  const parts: string[] = [];
+                                  pairInfo.configuredPairs.forEach(pair => parts.push(`(${pair.join('+')})`));
+                                  pairInfo.tempPairs.forEach(pair => parts.push(`[${pair.join('+')}]`));
+                                  pairInfo.solos.forEach(solo => parts.push(solo));
+                                  return parts.join(' · ');
+                                };
 
-                                // Calcular personas sobrantes (sin pareja)
-                                const soloDay = numDay % 2;
-                                const soloEvening = numEvening % 2;
-                                const soloP2 = (numDay + numEvening) % 2;
+                                const dayNames = formatPairNames(dayPairInfo);
+                                const eveningNames = formatPairNames(eveningPairInfo);
+
+                                // Usar valores calculados de parejas reales
+                                const soloDay = solosDay;
+                                const soloEvening = solosEvening;
+                                const soloP2 = solosP2;
 
                                 return (
                                   <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-200 overflow-hidden">
