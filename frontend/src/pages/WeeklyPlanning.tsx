@@ -38,25 +38,6 @@ const safeFormat = (date: Date | string | null | undefined, formatStr: string, o
   }
 };
 
-const SHIFT_COLORS: Record<string, string> = {
-  DAY: 'bg-blue-100 text-blue-800 border-blue-200',
-  EVENING: 'bg-orange-100 text-orange-800 border-orange-200',
-  NIGHT: 'bg-purple-100 text-purple-800 border-purple-200',
-};
-
-const getShiftColor = (shiftCode: string): string => {
-  if (shiftCode?.includes('MANANA') || shiftCode?.includes('DIA') || shiftCode?.includes('JOUR')) {
-    return SHIFT_COLORS.DAY;
-  }
-  if (shiftCode?.includes('TARDE') || shiftCode?.includes('SOIR')) {
-    return SHIFT_COLORS.EVENING;
-  }
-  if (shiftCode?.includes('NUIT') || shiftCode?.includes('NOCHE')) {
-    return SHIFT_COLORS.NIGHT;
-  }
-  return 'bg-gray-100 text-gray-800';
-};
-
 export default function WeeklyPlanning() {
   const { t, language } = useLanguage();
   const dateLocale = language === 'fr' ? fr : es;
