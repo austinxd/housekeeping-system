@@ -76,16 +76,27 @@ class Employee(models.Model):
 
     # Elasticidad
     ELASTICITY_CHOICES = [
-        ('LOW', 'Baja - No estirar horas'),
-        ('MEDIUM', 'Media - Puede hacer ±2h'),
-        ('HIGH', 'Alta - Flexible, puede cubrir huecos'),
+        ('LOW', 'Baja'),
+        ('MEDIUM', 'Media'),
+        ('HIGH', 'Alta'),
     ]
     elasticity = models.CharField(
         max_length=10,
         choices=ELASTICITY_CHOICES,
         default='MEDIUM',
-        help_text="Flexibilidad para ajustar horas"
+        help_text="Flexibilidad para ajustar horas (configurar límites en Reglas de Elasticidad)"
     )
+
+    def get_elasticity_description(self):
+        """Devuelve descripción dinámica basada en ElasticityRule."""
+        from apps.rules.models import ElasticityRule
+        try:
+            rule = ElasticityRule.objects.get(elasticity_level=self.elasticity)
+            if rule.max_extra_hours_week == 0:
+                return f"{self.get_elasticity_display()} - No puede hacer horas extra"
+            return f"{self.get_elasticity_display()} - Max ±{rule.max_extra_hours_day}h/día, {rule.max_extra_hours_week}h/sem"
+        except ElasticityRule.DoesNotExist:
+            return self.get_elasticity_display()
 
     # Días de descanso fijos (opcional)
     # Si está vacío, el sistema elige los días óptimos

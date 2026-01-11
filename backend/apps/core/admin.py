@@ -13,11 +13,27 @@ class TimeBlockAdmin(admin.ModelAdmin):
 
 @admin.register(TaskType)
 class TaskTypeAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'base_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
-    list_editable = ['base_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
+    list_display = ['code', 'name', 'base_minutes', 'solo_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
+    list_editable = ['base_minutes', 'solo_minutes', 'persons_required', 'earliest_start_time', 'latest_end_time', 'priority', 'is_active']
     list_filter = ['allowed_blocks', 'is_active']
     filter_horizontal = ['allowed_blocks']
     search_fields = ['code', 'name']
+
+    fieldsets = (
+        ('Identificación', {
+            'fields': ('code', 'name', 'description')
+        }),
+        ('Tiempos de trabajo', {
+            'fields': ('base_minutes', 'solo_minutes', 'persons_required'),
+            'description': 'base_minutes = tiempo con PAREJA (2 pers.), solo_minutes = tiempo con 1 PERSONA'
+        }),
+        ('Horarios permitidos', {
+            'fields': ('allowed_blocks', 'earliest_start_time', 'latest_end_time')
+        }),
+        ('Configuración', {
+            'fields': ('priority', 'is_active')
+        }),
+    )
 
 
 @admin.register(Building)

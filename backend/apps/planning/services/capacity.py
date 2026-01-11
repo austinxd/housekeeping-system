@@ -82,14 +82,12 @@ class CapacityCalculator:
         time_block: TimeBlock
     ) -> Optional[ShiftTemplate]:
         """Obtiene la plantilla de turno para un empleado y bloque."""
-        try:
-            return ShiftTemplate.objects.get(
-                role=employee.role,
-                time_block=time_block,
-                is_active=True
-            )
-        except ShiftTemplate.DoesNotExist:
-            return None
+        # Usar filter().first() porque puede haber múltiples templates (ej: FDC_MANANA y FDC_MANANA_CORTO)
+        return ShiftTemplate.objects.filter(
+            role=employee.role,
+            time_block=time_block,
+            is_active=True
+        ).first()
 
     def compute_capacity(
         self,

@@ -233,7 +233,7 @@ export const translations = {
       total: 'Total',
       hours: 'heures',
       persons: 'personnes',
-      free: 'Libre',
+      free: 'Repos',
       assigned: 'Assignés',
       tasks: 'tâches',
       resolve: 'Résoudre',

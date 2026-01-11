@@ -25,6 +25,7 @@ from apps.planning.services import (
 )
 from apps.planning.services.forecast_loader import ForecastLoader
 from apps.planning.services.forecast_pdf_parser import ForecastPDFParser
+from apps.planning.services.daily_distribution import DailyDistributionCalculator
 
 from . import serializers
 
@@ -333,6 +334,93 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
             'employee', 'employee__role', 'team', 'shift_template'
         ).order_by('date')
 
+        # Calcular distribución real por día usando daily_distribution
+        # Esto calcula el spare (tiempo libre) real por empleado
+        daily_employee_spare = {}  # date -> {employee_id -> spare_min}
+
+        # Primero recopilar empleados reales por día y turno
+        employees_by_day_shift = {}  # date -> {'morning': [emp_data...], 'evening': [emp_data...]}
+        for assignment in assignments:
+            if assignment.is_day_off or not assignment.employee:
+                continue
+            date_str = assignment.date.isoformat()
+            if date_str not in employees_by_day_shift:
+                employees_by_day_shift[date_str] = {'morning': [], 'evening': []}
+
+            is_morning = 'MANANA' in (assignment.shift_template.code if assignment.shift_template else '')
+            shift_key = 'morning' if is_morning else 'evening'
+            employees_by_day_shift[date_str][shift_key].append({
+                'id': assignment.employee.id,
+                'employee_id': assignment.employee.id,
+                'employee_short': assignment.employee.first_name,
+            })
+
+        # Calcular distribución real para cada día
+        if week_plan.forecast_data:
+            from apps.planning.services.daily_distribution import DailyDistributionCalculator
+            calc = DailyDistributionCalculator()
+
+            for fc in week_plan.forecast_data:
+                fc_date = fc.get('date')
+                if not fc_date:
+                    continue
+
+                employees = employees_by_day_shift.get(fc_date, {'morning': [], 'evening': []})
+                assigned_day = employees.get('morning', [])
+                assigned_evening = employees.get('evening', [])
+
+                try:
+                    result = calc.calculate_day_distribution(fc, assigned_day, assigned_evening)
+                    periods = result.get('periods', {})
+
+                    # Obtener spare por período (usar per_person_min si existe, sino value/workers)
+                    def get_spare_per_person(period_data):
+                        spare = period_data.get('spare', {})
+                        if 'per_person_min' in spare:
+                            return spare.get('per_person_min', 0)
+                        # Fallback: total / workers
+                        total = spare.get('total_min', spare.get('value', 0))
+                        workers = spare.get('num_workers', 1)
+                        return total / workers if workers > 0 else 0
+
+                    # P1: Solo mañana - spare por persona de mañana
+                    p1_spare_pp = get_spare_per_person(periods.get('p1', {}))
+
+                    # P2: Spare por empleado específico
+                    p2_data = periods.get('p2', {})
+                    p2_employee_spare = p2_data.get('employee_spare', {})
+                    p2_morning_spare_pp = p2_data.get('morning_spare_pp', 0)  # fallback
+                    p2_evening_spare_pp = p2_data.get('evening_spare_pp', 0)  # fallback
+
+                    # P3: Solo tarde - spare por persona de tarde
+                    p3_spare_pp = get_spare_per_person(periods.get('p3', {}))
+
+                    # Couvertures: Solo tarde
+                    couv_spare_pp = get_spare_per_person(periods.get('couvertures', {}))
+
+                    # Construir spare por empleado
+                    employee_spare = {}
+
+                    # Morning workers: P1 spare + su spare específico de P2
+                    for emp in assigned_day:
+                        emp_id = emp.get('id')
+                        if emp_id:
+                            emp_p2_spare = p2_employee_spare.get(emp_id, p2_morning_spare_pp)
+                            employee_spare[emp_id] = p1_spare_pp + emp_p2_spare
+
+                    # Evening workers: su spare específico de P2 + P3 + couvertures
+                    for emp in assigned_evening:
+                        emp_id = emp.get('id')
+                        if emp_id:
+                            emp_p2_spare = p2_employee_spare.get(emp_id, p2_evening_spare_pp)
+                            employee_spare[emp_id] = emp_p2_spare + p3_spare_pp + couv_spare_pp
+
+                    daily_employee_spare[fc_date] = employee_spare
+
+                except Exception as e:
+                    # Si falla el cálculo, usar dict vacío
+                    daily_employee_spare[fc_date] = {}
+
         # Obtener parejas/equipos para ordenar
         teams = Team.objects.filter(is_active=True).prefetch_related('members')
         employee_team_order = {}  # employee_id -> (team_order, member_order)
@@ -368,16 +456,30 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                     'shifts': []
                 }
 
-            # Calcular hora de salida
+            # Usar horarios del ShiftTemplate directamente
             start_time = None
             end_time = None
-            if assignment.shift_template and assignment.shift_template.start_time:
-                start_time = assignment.shift_template.start_time.strftime('%H:%M')
-                # Calcular salida: entrada + horas trabajadas + 30min almuerzo
-                start_dt = datetime.combine(assignment.date, assignment.shift_template.start_time)
-                lunch_break = 0.5  # 30 minutos de almuerzo
-                end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours) + lunch_break)
-                end_time = end_dt.strftime('%H:%M')
+            break_minutes = 30  # default
+            if assignment.shift_template:
+                if assignment.shift_template.start_time:
+                    start_time = assignment.shift_template.start_time.strftime('%H:%M')
+                if assignment.shift_template.end_time:
+                    end_time = assignment.shift_template.end_time.strftime('%H:%M')
+                break_minutes = assignment.shift_template.break_minutes or 30
+
+            # Calcular horas libres usando el spare real calculado por daily_distribution
+            free_hours = 0.0
+            if not assignment.is_day_off and assignment.employee:
+                date_str = assignment.date.isoformat()
+                employee_spare = daily_employee_spare.get(date_str, {})
+
+                # Obtener spare específico del empleado
+                emp_id = assignment.employee.id
+                spare_min = employee_spare.get(emp_id, 0)
+
+                # Convertir minutos a horas y redondear a 0.5h
+                free_hours = max(0, spare_min / 60)
+                free_hours = round(free_hours * 2) / 2
 
             by_assignee[key]['shifts'].append({
                 'date': assignment.date,
@@ -386,6 +488,8 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                 'hours': float(assignment.assigned_hours),
                 'start_time': start_time,
                 'end_time': end_time,
+                'break_minutes': break_minutes,
+                'free_hours': round(free_hours, 1),
                 'is_day_off': assignment.is_day_off
             })
 
@@ -420,7 +524,7 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
         day_start = day_block.start_time.strftime('%H:%M') if day_block and day_block.start_time else '09:00'
         day_end = day_block.end_time.strftime('%H:%M') if day_block and day_block.end_time else '17:00'
         evening_start = evening_block.start_time.strftime('%H:%M') if evening_block and evening_block.start_time else '13:30'
-        evening_end = evening_block.end_time.strftime('%H:%M') if evening_block and evening_block.end_time else '21:30'
+        evening_end = evening_block.end_time.strftime('%H:%M') if evening_block and evening_block.end_time else '22:30'
         evening_helps_hours = float(evening_block.helps_other_shift_hours) if evening_block else 4.5
 
         # Obtener tiempos de tareas desde BD
@@ -456,6 +560,9 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
         week_days = [week_plan.week_start_date + timedelta(days=i) for i in range(7)]
         day_names_es = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
+        # Calculador de distribución diaria
+        distribution_calculator = DailyDistributionCalculator()
+
         # Obtener asignaciones por día con horarios
         assignments = week_plan.shift_assignments.select_related(
             'employee', 'shift_template', 'shift_template__time_block'
@@ -471,14 +578,10 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                 block_code = assignment.shift_template.time_block.code
                 start_time = assignment.shift_template.start_time
                 if block_code in assignments_by_day[day_key]:
-                    # Calcular hora de salida
+                    # Usar hora de salida del ShiftTemplate directamente
                     end_time = None
-                    if start_time:
-                        from datetime import datetime
-                        start_dt = datetime.combine(assignment.date, start_time)
-                        # Hora salida = horas trabajadas + 30min almuerzo
-                        end_dt = start_dt + timedelta(hours=float(assignment.assigned_hours) + 0.5)
-                        end_time = end_dt.strftime('%H:%M')
+                    if assignment.shift_template and assignment.shift_template.end_time:
+                        end_time = assignment.shift_template.end_time.strftime('%H:%M')
 
                     assignments_by_day[day_key][block_code].append({
                         'employee_id': assignment.employee.id if assignment.employee else None,
@@ -617,6 +720,14 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
                 'explanation_text': '',
             }
 
+            # Calcular distribución diaria con el servicio centralizado
+            daily_distribution = distribution_calculator.calculate_day_distribution(
+                forecast=fc,
+                assigned_day=assigned_day,
+                assigned_evening=assigned_evening,
+            )
+            day_explanation['daily_distribution'] = daily_distribution
+
             # Calcular distribución de habitaciones por período
             num_day = len(assigned_day)
             num_evening = len(assigned_evening)
@@ -666,7 +777,7 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
             text_parts.append(f"⏰ {day_end} - 19:00  TARDE TERMINA LIMPIEZA")
             text_parts.append(f"   {num_evening} persona(s) finalizan habitaciones pendientes")
 
-            # PERÍODO 4: Couverture (19:00 - 21:30)
+            # PERÍODO 4: Couverture (19:00 - 22:30)
             text_parts.append(f"")
             text_parts.append(f"🌙 19:00 - {evening_end}  COUVERTURE")
             text_parts.append(f"   {num_evening} persona(s) → {occupied} couvertures")
@@ -729,6 +840,37 @@ class WeekPlanViewSet(viewsets.ModelViewSet):
         }
 
         return Response(explanation)
+
+    @action(detail=True, methods=['post'])
+    def optimize_assignments(self, request, pk=None):
+        """
+        Optimiza las asignaciones del plan para minimizar tiempo libre.
+        Ajusta el número de personas por día según la carga real de trabajo.
+        """
+        from apps.planning.services.assignment_optimizer import AssignmentOptimizer
+
+        week_plan = self.get_object()
+
+        if week_plan.status == 'PUBLISHED':
+            return Response(
+                {'error': 'No se puede optimizar un plan publicado'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            optimizer = AssignmentOptimizer()
+            result = optimizer.optimize_assignments(week_plan)
+
+            return Response({
+                'success': True,
+                'message': f'Se removieron {len(result["removed"])} asignaciones excedentes',
+                'changes': result,
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ShiftAssignmentViewSet(viewsets.ModelViewSet):
@@ -1102,6 +1244,11 @@ class ForecastWeekPlanView(views.APIView):
         try:
             week_plan = self._generate_weekplan(week_start, week_load, requirements, forecast_data_to_save)
 
+            # Generar asignaciones óptimas garantizando horas contratadas
+            from apps.planning.services.assignment_optimizer import AssignmentOptimizer
+            optimizer = AssignmentOptimizer()
+            optimizer.generate_optimal_assignments(week_plan, forecast_data_to_save)
+
             # Serializar resultado
             result = {
                 'week_plan_id': week_plan.id,
@@ -1393,10 +1540,11 @@ class ForecastWeekPlanView(views.APIView):
 
                     hours_assigned += hours_per_day
 
-        # === MODELO DE ASIGNACIÓN BALANCEADO ===
-        # 1. Primero: Asegurar mínimo de MAÑANA (trabajo en parejas)
-        # 2. Luego: Cubrir TARDE para couverture
-        # 3. Finalmente: Balancear si hay excesos
+        # === MODELO DE ASIGNACIÓN: COUVERTURE PRIMERO ===
+        # NUEVO ORDEN:
+        # 1. Primero: Cubrir TARDE para couverture (prioridad máxima)
+        # 2. Luego: Cubrir MAÑANA (considerando que TARDE ayuda con tareas DAY)
+        # 3. Finalmente: Balancear si es necesario
 
         # Mínimos desde BD
         day_block = TimeBlock.objects.filter(code='DAY').first()
@@ -1446,17 +1594,49 @@ class ForecastWeekPlanView(views.APIView):
         max_evening_needed = max(day_needs[i]['EVENING'] for i in range(7))
         max_day_needed = max(max(day_needs[i]['DAY'] for i in range(7)), min_day_staff)
 
-        # PASO 1: Asignar UNIDADES al turno MAÑANA primero (para asegurar mínimo)
-        # Prioridad: day_only primero, luego flexibles
-        day_assigned = []
-        available_for_day = day_only_units + flexible_units
+        # ============================================
+        # ESTRATEGIA: DAY primero (carga fuerte)
+        # ============================================
+        # 1. Reservar mínimo necesario para EVENING (couvertures)
+        # 2. Asignar DAY con el resto
+        # 3. EVENING ayuda con DAY durante solapamiento (4.5h)
+        # 4. Completar EVENING si faltan
 
+        # Primero: Reservar unidades para EVENING (solo evening_only + algunos flexibles)
+        evening_reserved = list(evening_only_units)  # Estos SOLO pueden hacer EVENING
+
+        # Calcular cuántas unidades flexibles necesitamos reservar para EVENING
+        evening_only_coverage = calculate_daily_coverage(evening_reserved)
+        evening_uncovered = find_uncovered_days(evening_only_coverage, max_evening_needed)
+
+        # Reservar flexibles para cubrir días sin cobertura EVENING
+        flexible_reserved_for_evening = []
+        for unit in flexible_units:
+            if not evening_uncovered:
+                break
+            working = get_working_days_for_unit(unit)
+            covers = len([d for d in evening_uncovered if d in working])
+            if covers > 0:
+                flexible_reserved_for_evening.append(unit)
+                # Recalcular cobertura
+                temp_evening = evening_reserved + flexible_reserved_for_evening
+                evening_only_coverage = calculate_daily_coverage(temp_evening)
+                evening_uncovered = find_uncovered_days(evening_only_coverage, max_evening_needed)
+
+        # ============================================
+        # PASO 1: Asignar DAY (carga fuerte)
+        # ============================================
+        # Usar day_only + flexibles NO reservados para EVENING
+        day_assigned = []
+        available_for_day = day_only_units + [u for u in flexible_units if u not in flexible_reserved_for_evening]
+
+        # Primero cubrir mínimo
         while True:
             coverage = calculate_daily_coverage(day_assigned)
-            uncovered = find_uncovered_days(coverage, min_day_staff)  # Asegurar mínimo primero
+            uncovered = find_uncovered_days(coverage, min_day_staff)
 
             if not uncovered:
-                break  # Mínimo cubierto todos los días
+                break
 
             best_unit = None
             best_cover_count = 0
@@ -1476,10 +1656,40 @@ class ForecastWeekPlanView(views.APIView):
             assign_unit_to_shift(best_unit, 'DAY')
             day_assigned.append(best_unit)
 
-        # PASO 2: Asignar UNIDADES al turno TARDE (para couverture)
-        # Solo usar evening_only + flexibles que NO están en DAY
+        # Luego cubrir hasta max_day_needed
+        while True:
+            coverage = calculate_daily_coverage(day_assigned)
+            uncovered = find_uncovered_days(coverage, max_day_needed)
+
+            if not uncovered:
+                break
+
+            best_unit = None
+            best_cover_count = 0
+
+            for unit in available_for_day:
+                if unit in day_assigned:
+                    continue
+                working = get_working_days_for_unit(unit)
+                covers = len([d for d in uncovered if d in working])
+                if covers > best_cover_count:
+                    best_cover_count = covers
+                    best_unit = unit
+
+            if best_unit is None:
+                break
+
+            assign_unit_to_shift(best_unit, 'DAY')
+            day_assigned.append(best_unit)
+
+        # ============================================
+        # PASO 2: Asignar EVENING (couvertures)
+        # ============================================
+        # Usar evening_only + flexibles reservados + flexibles restantes
         evening_assigned = []
-        available_for_evening = evening_only_units + [u for u in flexible_units if u not in day_assigned]
+        available_for_evening = evening_reserved + flexible_reserved_for_evening
+        # Añadir flexibles que no se usaron en DAY
+        available_for_evening += [u for u in flexible_units if u not in day_assigned and u not in available_for_evening]
 
         while True:
             coverage = calculate_daily_coverage(evening_assigned)
@@ -1506,39 +1716,13 @@ class ForecastWeekPlanView(views.APIView):
             assign_unit_to_shift(best_unit, 'EVENING')
             evening_assigned.append(best_unit)
 
-        # PASO 3: Si DAY necesita más personas (más del mínimo), añadir flexibles disponibles
-        available_for_day_extra = [u for u in flexible_units if u not in day_assigned and u not in evening_assigned]
-
-        while True:
-            coverage = calculate_daily_coverage(day_assigned)
-            uncovered = find_uncovered_days(coverage, max_day_needed)
-
-            if not uncovered:
-                break
-
-            best_unit = None
-            best_cover_count = 0
-
-            for unit in available_for_day_extra:
-                if unit in day_assigned:
-                    continue
-                working = get_working_days_for_unit(unit)
-                covers = len([d for d in uncovered if d in working])
-                if covers > best_cover_count:
-                    best_cover_count = covers
-                    best_unit = unit
-
-            if best_unit is None:
-                break
-
-            assign_unit_to_shift(best_unit, 'DAY')
-            day_assigned.append(best_unit)
-
-        # PASO 4: Si DAY sigue sin cobertura mínima, mover UNIDADES de EVENING a DAY
-        # Permitir que EVENING baje hasta min_evening_staff (no max_evening_needed)
+        # ============================================
+        # PASO 3: Balanceo final
+        # ============================================
+        # Si DAY sigue sin cobertura, usar flexibles de EVENING (si EVENING tiene exceso)
         day_coverage = calculate_daily_coverage(day_assigned)
         evening_coverage = calculate_daily_coverage(evening_assigned)
-        uncovered_days = find_uncovered_days(day_coverage, min_day_staff)  # Priorizar mínimo
+        uncovered_days = find_uncovered_days(day_coverage, min_day_staff)
 
         if uncovered_days:
             for unit in list(evening_assigned):
@@ -1552,10 +1736,10 @@ class ForecastWeekPlanView(views.APIView):
                 if not helps_day:
                     continue
 
-                # EVENING puede bajar hasta min_evening_staff (no max_evening_needed)
+                # EVENING puede bajar solo si tiene exceso sobre max_evening_needed
                 can_move = True
                 for day in unit_working:
-                    if evening_coverage[day] - unit_size < min_evening_staff:
+                    if evening_coverage[day] - unit_size < max_evening_needed:
                         can_move = False
                         break
 
@@ -1577,6 +1761,132 @@ class ForecastWeekPlanView(views.APIView):
 
                     if not uncovered_days:
                         break
+
+        # ============================================
+        # PASO 4: Usar ELASTICIDAD para cubrir déficit EVENING
+        # ============================================
+        # Si EVENING sigue sin cobertura, usar empleados con elasticidad
+        from apps.rules.models import ElasticityRule
+
+        evening_coverage = calculate_daily_coverage(evening_assigned)
+        evening_uncovered = find_uncovered_days(evening_coverage, max_evening_needed)
+
+        if evening_uncovered:
+            # Obtener reglas de elasticidad ordenadas por prioridad
+            elasticity_rules = {
+                rule.elasticity_level: {
+                    'max_extra_week': float(rule.max_extra_hours_week),
+                    'max_extra_day': float(rule.max_extra_hours_day),
+                    'priority': rule.assignment_priority,
+                }
+                for rule in ElasticityRule.objects.all()
+            }
+
+            # Empleados DAY con elasticidad MEDIUM o HIGH que pueden hacer EVENING
+            elastic_employees = []
+            for unit in day_assigned:
+                employees = get_unit_employees(unit)
+                for emp in employees:
+                    if emp.elasticity in ['MEDIUM', 'HIGH']:
+                        # Verificar si puede trabajar EVENING
+                        can_evening = 'EVENING' in get_unit_allowed_blocks((emp,))
+                        if can_evening:
+                            rule = elasticity_rules.get(emp.elasticity, {})
+                            elastic_employees.append({
+                                'employee': emp,
+                                'elasticity': emp.elasticity,
+                                'priority': rule.get('priority', 0),
+                                'max_extra_day': rule.get('max_extra_day', 0),
+                                'max_extra_week': rule.get('max_extra_week', 0),
+                            })
+
+            # Ordenar por prioridad (HIGH primero)
+            elastic_employees.sort(key=lambda x: x['priority'], reverse=True)
+
+            # Tracking de horas extra asignadas por empleado
+            extra_hours_assigned = {emp['employee'].id: 0 for emp in elastic_employees}
+
+            # Obtener plantilla de turno EVENING
+            evening_shift_template = None
+            for emp_data in elastic_employees:
+                emp = emp_data['employee']
+                template = (
+                    shift_templates.get((emp.role.code, 'EVENING')) or
+                    shift_templates.get((None, 'EVENING'))
+                )
+                if template:
+                    evening_shift_template = template
+                    break
+
+            if evening_shift_template:
+                # Obtener horas de couverture desde BD
+                couverture_task = TaskType.objects.filter(code='COUVERTURE').first()
+                if couverture_task and couverture_task.earliest_start_time and couverture_task.latest_end_time:
+                    from datetime import datetime as dt
+                    start = dt.combine(week_start, couverture_task.earliest_start_time)
+                    end = dt.combine(week_start, couverture_task.latest_end_time)
+                    couverture_hours = (end - start).total_seconds() / 3600
+                else:
+                    couverture_hours = 3.5  # Fallback: 19:00-22:30
+
+                for day_idx in evening_uncovered:
+                    day_date = week_days[day_idx]
+                    persons_needed = max_evening_needed - evening_coverage[day_idx]
+
+                    for _ in range(persons_needed):
+                        # Buscar empleado elástico disponible
+                        assigned_elastic = False
+
+                        for emp_data in elastic_employees:
+                            emp = emp_data['employee']
+                            emp_id = emp.id
+
+                            # Verificar límites de elasticidad
+                            current_extra = extra_hours_assigned.get(emp_id, 0)
+                            max_extra_week = emp_data['max_extra_week']
+                            max_extra_day = emp_data['max_extra_day']
+
+                            # Calcular horas extra que podemos asignar (respetando límites)
+                            available_week = max_extra_week - current_extra
+                            hours_to_assign = min(couverture_hours, available_week, max_extra_day)
+
+                            if hours_to_assign <= 0:
+                                continue
+
+                            # Verificar si ya trabaja ese día (turno DAY)
+                            existing = ShiftAssignment.objects.filter(
+                                week_plan=week_plan,
+                                employee=emp,
+                                date=day_date,
+                                shift_template__time_block__code='DAY'
+                            ).first()
+
+                            if not existing:
+                                continue  # Solo extender si ya trabaja DAY ese día
+
+                            # Verificar días libres
+                            days_off = employee_days_off.get(emp_id, (5, 6))
+                            if day_idx in days_off:
+                                continue
+
+                            # Extender el turno existente añadiendo horas para couverture
+                            # O crear asignación EVENING adicional
+                            existing.assigned_hours = float(existing.assigned_hours) + hours_to_assign
+                            existing.notes = f"{existing.notes or ''} +{hours_to_assign}h elasticidad couvertures".strip()
+                            existing.save()
+
+                            extra_hours_assigned[emp_id] = current_extra + hours_to_assign
+
+                            # Solo cuenta como cubierto si asignamos al menos 2h para couverture efectivo
+                            if hours_to_assign >= 2:
+                                evening_coverage[day_idx] += 1
+                                assigned_elastic = True
+                                break
+
+                        if not assigned_elastic:
+                            # No hay empleados elásticos disponibles para cubrir completamente
+                            # Pero ya hemos extendido algunos turnos
+                            break
 
         return week_plan
 
@@ -1680,6 +1990,12 @@ class ForecastUploadView(views.APIView):
             week_plan = forecast_view._generate_weekplan(
                 week_start, week_load, requirements, forecast_data_to_save
             )
+
+            # Generar asignaciones óptimas garantizando horas contratadas
+            from apps.planning.services.assignment_optimizer import AssignmentOptimizer
+            optimizer = AssignmentOptimizer()
+            # IMPORTANTE: generate_optimal_assignments asegura que todos cumplan sus horas
+            optimization_result = optimizer.generate_optimal_assignments(week_plan, forecast_data_to_save)
 
             # Construir respuesta
             result = {

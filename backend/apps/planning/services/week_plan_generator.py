@@ -126,6 +126,131 @@ class WeekPlanGenerator:
                 continue
         return None
 
+    def _get_shift_template_for_block(self, employee: Employee, block_code: str) -> Optional[ShiftTemplate]:
+        """Obtiene la plantilla de turno para un bloque específico."""
+        try:
+            block = TimeBlock.objects.get(code=block_code)
+            if employee.allowed_blocks.filter(id=block.id).exists():
+                return ShiftTemplate.objects.filter(
+                    role=employee.role,
+                    time_block=block,
+                    is_active=True
+                ).first()
+        except TimeBlock.DoesNotExist:
+            pass
+        return None
+
+    def _get_employees_by_shift_capability(self) -> Dict[str, List[Employee]]:
+        """
+        Agrupa empleados activos por su capacidad de turno.
+        Returns dict con 'EVENING' y 'DAY' como claves.
+        """
+        employees = Employee.objects.filter(is_active=True).prefetch_related('allowed_blocks')
+        result = {'EVENING': [], 'DAY': [], 'BOTH': []}
+
+        for emp in employees:
+            block_codes = set(emp.allowed_blocks.values_list('code', flat=True))
+            if 'EVENING' in block_codes and 'DAY' in block_codes:
+                result['BOTH'].append(emp)
+            elif 'EVENING' in block_codes:
+                result['EVENING'].append(emp)
+            elif 'DAY' in block_codes:
+                result['DAY'].append(emp)
+
+        return result
+
+    def _calculate_daily_staffing_needs(
+        self,
+        week_start: date,
+        week_load: Dict
+    ) -> Dict[str, Dict[str, int]]:
+        """
+        Calcula las necesidades de personal por día basándose en la carga calculada.
+
+        Usa la configuración de la BD:
+        - TimeBlock: horas de trabajo por turno
+        - TaskType COUVERTURE: tiempo de couverture para calcular personal EVENING
+
+        Returns: Dict con fecha ISO como clave y {'day': n, 'evening': n} como valor
+        """
+        from apps.core.models import TimeBlock, TaskType
+
+        result = {}
+
+        # Obtener configuración desde BD
+        day_block = TimeBlock.objects.filter(code='DAY').first()
+        evening_block = TimeBlock.objects.filter(code='EVENING').first()
+        couverture_task = TaskType.objects.filter(code='COUVERTURE').first()
+
+        # Horas de trabajo por turno
+        day_shift_hours = 8.0
+        if day_block and day_block.start_time and day_block.end_time:
+            from datetime import datetime
+            start = datetime.combine(week_start, day_block.start_time)
+            end = datetime.combine(week_start, day_block.end_time)
+            day_shift_hours = (end - start).total_seconds() / 3600
+
+        # Horas disponibles para couvertures (desde EVENING block o TaskType)
+        evening_couverture_hours = 3.5  # default
+        if couverture_task and couverture_task.earliest_start_time and couverture_task.latest_end_time:
+            from datetime import datetime
+            start = datetime.combine(week_start, couverture_task.earliest_start_time)
+            end = datetime.combine(week_start, couverture_task.latest_end_time)
+            evening_couverture_hours = (end - start).total_seconds() / 3600
+
+        # Mínimo de staff
+        day_min_staff = day_block.min_staff if day_block else 2
+        evening_min_staff = evening_block.min_staff if evening_block else 2
+
+        # Contribución del turno EVENING al turno DAY
+        evening_helps_hours = float(evening_block.helps_other_shift_hours) if evening_block else 4.5
+
+        # Calcular necesidades por día
+        week_days = self._get_week_days(week_start)
+
+        for day in week_days:
+            day_key = day.isoformat()
+
+            if day_key not in week_load['days']:
+                result[day_key] = {'day': 0, 'evening': 0}
+                continue
+
+            day_load = week_load['days'][day_key]
+            blocks = day_load.get('blocks', {})
+
+            # Carga del bloque DAY (DEPART + RECOUCH)
+            day_block_load = blocks.get('DAY', {})
+            day_minutes = day_block_load.get('total_minutes', 0)
+            day_hours = day_minutes / 60
+
+            # Carga del bloque EVENING (COUVERTURE)
+            evening_block_load = blocks.get('EVENING', {})
+            evening_minutes = evening_block_load.get('total_minutes', 0)
+            evening_hours = evening_minutes / 60
+
+            # Paso 1: Calcular personas EVENING necesarias para cubrir couvertures
+            evening_persons = 0
+            if evening_hours > 0 and evening_couverture_hours > 0:
+                # Personas necesarias = horas de trabajo / horas disponibles por persona
+                evening_persons = max(evening_min_staff, round(evening_hours / evening_couverture_hours))
+
+            # Paso 2: Calcular contribución del turno EVENING al turno DAY
+            evening_contribution_to_day = evening_persons * evening_helps_hours
+
+            # Paso 3: Calcular personas DAY necesarias (restando contribución EVENING)
+            remaining_day_hours = max(0, day_hours - evening_contribution_to_day)
+            day_persons = 0
+            if remaining_day_hours > 0 and day_shift_hours > 0:
+                calculated = round(remaining_day_hours / day_shift_hours)
+                day_persons = max(day_min_staff, calculated) if calculated > 0 else 0
+
+            result[day_key] = {
+                'day': day_persons,
+                'evening': evening_persons,
+            }
+
+        return result
+
     def _assign_shifts_to_employee(
         self,
         employee: Employee,
@@ -244,6 +369,123 @@ class WeekPlanGenerator:
 
         return assignments
 
+    def _assign_evening_shifts_for_day(
+        self,
+        day: date,
+        persons_needed: int,
+        available_employees: List[Employee],
+        week_plan: WeekPlan,
+        employee_hours: Dict[int, Decimal],
+        processed_today: set
+    ) -> List[ShiftAssignment]:
+        """
+        Asigna turnos de tarde para cubrir couvertures de un día.
+
+        Args:
+            day: Fecha del día
+            persons_needed: Número de personas necesarias para couvertures
+            available_employees: Lista de empleados que pueden trabajar en turno EVENING
+            week_plan: Plan semanal
+            employee_hours: Dict con horas ya asignadas por empleado
+            processed_today: Set de empleados ya procesados hoy
+
+        Returns:
+            Lista de asignaciones creadas
+        """
+        assignments = []
+        assigned_count = 0
+
+        for employee in available_employees:
+            if assigned_count >= persons_needed:
+                break
+
+            if employee.id in processed_today:
+                continue
+
+            # Verificar si ya cumplió sus horas semanales
+            current_hours = employee_hours.get(employee.id, Decimal('0'))
+            if current_hours >= employee.weekly_hours_target:
+                continue
+
+            # Obtener plantilla de turno EVENING
+            shift_template = self._get_shift_template_for_block(employee, 'EVENING')
+            if not shift_template:
+                continue
+
+            hours_per_shift = Decimal(str(shift_template.total_hours))
+            remaining = employee.weekly_hours_target - current_hours
+            assigned_hours = min(remaining, hours_per_shift)
+
+            assignment = ShiftAssignment(
+                week_plan=week_plan,
+                date=day,
+                employee=employee,
+                shift_template=shift_template,
+                assigned_hours=assigned_hours,
+                is_day_off=False
+            )
+            assignments.append(assignment)
+
+            # Actualizar tracking
+            employee_hours[employee.id] = current_hours + assigned_hours
+            processed_today.add(employee.id)
+            assigned_count += 1
+
+        return assignments
+
+    def _assign_day_shifts_for_day(
+        self,
+        day: date,
+        persons_needed: int,
+        available_employees: List[Employee],
+        week_plan: WeekPlan,
+        employee_hours: Dict[int, Decimal],
+        processed_today: set
+    ) -> List[ShiftAssignment]:
+        """
+        Asigna turnos de día para un día específico.
+        """
+        assignments = []
+        assigned_count = 0
+
+        for employee in available_employees:
+            if assigned_count >= persons_needed:
+                break
+
+            if employee.id in processed_today:
+                continue
+
+            # Verificar si ya cumplió sus horas semanales
+            current_hours = employee_hours.get(employee.id, Decimal('0'))
+            if current_hours >= employee.weekly_hours_target:
+                continue
+
+            # Obtener plantilla de turno DAY
+            shift_template = self._get_shift_template_for_block(employee, 'DAY')
+            if not shift_template:
+                continue
+
+            hours_per_shift = Decimal(str(shift_template.total_hours))
+            remaining = employee.weekly_hours_target - current_hours
+            assigned_hours = min(remaining, hours_per_shift)
+
+            assignment = ShiftAssignment(
+                week_plan=week_plan,
+                date=day,
+                employee=employee,
+                shift_template=shift_template,
+                assigned_hours=assigned_hours,
+                is_day_off=False
+            )
+            assignments.append(assignment)
+
+            # Actualizar tracking
+            employee_hours[employee.id] = current_hours + assigned_hours
+            processed_today.add(employee.id)
+            assigned_count += 1
+
+        return assignments
+
     @transaction.atomic
     def generate_week_plan(
         self,
@@ -252,6 +494,12 @@ class WeekPlanGenerator:
     ) -> WeekPlan:
         """
         Genera un plan semanal completo.
+
+        Estrategia de asignación:
+        1. Calcular necesidades de personal por día (usando ForecastLoader)
+        2. Asignar empleados EVENING primero (para cubrir couvertures)
+        3. Luego asignar empleados DAY
+        4. Verificar balance y generar alertas
 
         Args:
             week_start: Fecha del lunes de la semana
@@ -278,6 +526,9 @@ class WeekPlanGenerator:
         # Calcular carga de la semana
         week_load = self.load_calculator.compute_week_load(week_start)
 
+        # Calcular necesidades de personal por día
+        staffing_needs = self._calculate_daily_staffing_needs(week_start, week_load)
+
         # Crear plan
         week_plan = WeekPlan.objects.create(
             week_start_date=week_start,
@@ -285,6 +536,18 @@ class WeekPlanGenerator:
             status='DRAFT',
             created_by=created_by
         )
+
+        # Obtener empleados por capacidad de turno
+        employees_by_shift = self._get_employees_by_shift_capability()
+
+        # Pool de empleados para cada turno
+        # EVENING: empleados que solo pueden hacer tarde + los que pueden hacer ambos
+        # DAY: empleados que solo pueden hacer día + los que pueden hacer ambos (si no están asignados a tarde)
+        evening_pool = employees_by_shift['EVENING'] + employees_by_shift['BOTH']
+        day_pool = employees_by_shift['DAY'] + employees_by_shift['BOTH']
+
+        # Tracking de horas asignadas por empleado
+        employee_hours: Dict[int, Decimal] = defaultdict(Decimal)
 
         # Procesar equipos primero
         processed_employees = set()
@@ -299,29 +562,83 @@ class WeekPlanGenerator:
             )
             for assignment in assignments:
                 assignment.save()
+                # Track hours for team members
+                if assignment.employee:
+                    employee_hours[assignment.employee.id] += assignment.assigned_hours
 
-            # Marcar miembros como procesados
+            # Marcar miembros como procesados (para toda la semana)
             for member in team.members.all():
                 processed_employees.add(member.id)
 
-        # Procesar empleados individuales
-        employees = Employee.objects.filter(
-            is_active=True
-        ).exclude(
-            id__in=processed_employees
-        )
+        # Filtrar pools para excluir empleados en equipos
+        evening_pool = [e for e in evening_pool if e.id not in processed_employees]
+        day_pool = [e for e in day_pool if e.id not in processed_employees]
 
-        for employee in employees:
-            days_work, days_off = self._calculate_days_to_work(
-                employee, week_start, week_load
-            )
-            assignments = self._assign_shifts_to_employee(
-                employee, days_work, week_plan, week_load
-            )
-            for assignment in assignments:
-                assignment.save()
+        # Procesar cada día de la semana
+        week_days = self._get_week_days(week_start)
 
-        # Crear alertas
+        for day in week_days:
+            day_key = day.isoformat()
+            processed_today = set()
+
+            # Obtener necesidades del día
+            day_needs = staffing_needs.get(day_key, {'day': 0, 'evening': 0})
+            evening_needed = day_needs['evening']
+            day_needed = day_needs['day']
+
+            # 1. Primero asignar EVENING (para couvertures)
+            if evening_needed > 0:
+                evening_assignments = self._assign_evening_shifts_for_day(
+                    day, evening_needed, evening_pool,
+                    week_plan, employee_hours, processed_today
+                )
+                for assignment in evening_assignments:
+                    assignment.save()
+
+                # Verificar si se cubrieron las necesidades
+                if len(evening_assignments) < evening_needed:
+                    deficit = evening_needed - len(evening_assignments)
+                    self.alerts.append({
+                        'type': 'UNDERSTAFF',
+                        'severity': 'HIGH',
+                        'title': f'Faltan {deficit} persona(s) para turno tarde',
+                        'message': f'El día {day} necesita {evening_needed} personas para couvertures, solo hay {len(evening_assignments)} disponibles',
+                    })
+
+            # 2. Luego asignar DAY
+            if day_needed > 0:
+                day_assignments = self._assign_day_shifts_for_day(
+                    day, day_needed, day_pool,
+                    week_plan, employee_hours, processed_today
+                )
+                for assignment in day_assignments:
+                    assignment.save()
+
+                # Verificar si se cubrieron las necesidades
+                if len(day_assignments) < day_needed:
+                    deficit = day_needed - len(day_assignments)
+                    self.alerts.append({
+                        'type': 'UNDERSTAFF',
+                        'severity': 'MEDIUM',
+                        'title': f'Faltan {deficit} persona(s) para turno día',
+                        'message': f'El día {day} necesita {day_needed} personas para turno día, solo hay {len(day_assignments)} disponibles',
+                    })
+
+        # Verificar empleados con horas no cumplidas
+        for employee in evening_pool + day_pool:
+            if employee.id in processed_employees:
+                continue
+            assigned = employee_hours.get(employee.id, Decimal('0'))
+            if assigned < employee.weekly_hours_target:
+                deficit = employee.weekly_hours_target - assigned
+                self.alerts.append({
+                    'type': 'WARNING',
+                    'severity': 'LOW',
+                    'title': f'Déficit de horas para {employee.full_name}',
+                    'message': f'Asignadas {assigned}h de {employee.weekly_hours_target}h objetivo (faltan {deficit}h)',
+                })
+
+        # Crear alertas en BD
         for alert_data in self.alerts:
             PlanningAlert.objects.create(
                 date=week_start,

@@ -44,6 +44,11 @@ export const deleteWeekPlan = async (id: number) => {
   return response.data;
 };
 
+export const optimizeWeekPlan = async (id: number) => {
+  const response = await apiClient.post(`/week-plans/${id}/optimize_assignments/`);
+  return response.data;
+};
+
 export const getWeekPlanByEmployee = async (id: number) => {
   const response = await apiClient.get(`/week-plans/${id}/by_employee/`);
   return response.data;

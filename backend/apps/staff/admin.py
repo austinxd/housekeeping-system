@@ -25,7 +25,7 @@ class UnavailabilityInline(admin.TabularInline):
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = [
         'employee_code', 'full_name', 'role', 'weekly_hours_target',
-        'elasticity', 'can_work_night', 'is_active'
+        'elasticity', 'elasticity_info', 'can_work_night', 'is_active'
     ]
     list_filter = ['role', 'elasticity', 'can_work_night', 'is_active', 'allowed_blocks']
     list_editable = ['weekly_hours_target', 'elasticity', 'is_active']
@@ -60,6 +60,12 @@ class EmployeeAdmin(admin.ModelAdmin):
     def full_name(self, obj):
         return obj.full_name
     full_name.short_description = 'Nombre completo'
+
+    def elasticity_info(self, obj):
+        """Muestra elasticidad con límites configurados."""
+        return obj.get_elasticity_description()
+    elasticity_info.short_description = 'Elasticidad'
+    elasticity_info.admin_order_field = 'elasticity'
 
 
 @admin.register(Team)

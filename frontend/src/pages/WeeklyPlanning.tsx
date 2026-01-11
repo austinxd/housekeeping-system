@@ -8,9 +8,6 @@ import {
   getWeekPlanByEmployee,
   uploadForecastPDF,
   getWeekPlanLoadExplanation,
-  getTaskTypes,
-  getTimeBlocks,
-  getTeams,
   ForecastUploadResult,
 } from '../api/client';
 import { WeekPlan } from '../types';
@@ -69,7 +66,21 @@ export default function WeeklyPlanning() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadResult, setUploadResult] = useState<ForecastUploadResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [uploadStep, setUploadStep] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [buildStep, setBuildStep] = useState(0); // 0-7 para animar cada día
+  const [isAnimatingCalendar, setIsAnimatingCalendar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Pasos del proceso de carga
+  const uploadSteps = [
+    { icon: '📄', text: 'Leyendo PDF...', color: 'text-blue-600' },
+    { icon: '📊', text: 'Analizando forecast...', color: 'text-purple-600' },
+    { icon: '🧮', text: 'Calculando carga de trabajo...', color: 'text-orange-600' },
+    { icon: '👥', text: 'Asignando personal...', color: 'text-green-600' },
+    { icon: '⚡', text: 'Optimizando distribución...', color: 'text-yellow-600' },
+    { icon: '✨', text: '¡Plan generado!', color: 'text-emerald-600' },
+  ];
 
   // Queries
   const { data: weekPlans, isLoading: loadingPlans } = useQuery({
@@ -95,23 +106,6 @@ export default function WeeklyPlanning() {
     enabled: !!selectedPlanId,
   });
 
-  // Config from admin panel
-  const { data: taskTypes } = useQuery({
-    queryKey: ['taskTypes'],
-    queryFn: getTaskTypes,
-  });
-
-  // TimeBlocks para futuro uso de períodos dinámicos
-  useQuery({
-    queryKey: ['timeBlocks'],
-    queryFn: getTimeBlocks,
-  });
-
-  // Teams para calcular parejas reales
-  const { data: teams } = useQuery({
-    queryKey: ['teams'],
-    queryFn: getTeams,
-  });
 
   // Mutations
   const publishMutation = useMutation({
@@ -132,15 +126,48 @@ export default function WeeklyPlanning() {
 
   const uploadMutation = useMutation({
     mutationFn: uploadForecastPDF,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Cerrar modal y mostrar resultado
+      setShowUploadModal(false);
+      setIsProcessing(false);
       setUploadResult(data);
       queryClient.invalidateQueries({ queryKey: ['weekPlans'] });
       setSelectedPlanId(data.week_plan_id);
+
+      // Iniciar animación del calendario principal
+      setIsAnimatingCalendar(true);
+      setBuildStep(0);
+
+      // Animar día por día
+      for (let i = 0; i <= 7; i++) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        setBuildStep(i + 1);
+      }
+
+      // Terminar animación
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setIsAnimatingCalendar(false);
+    },
+    onError: () => {
+      setIsProcessing(false);
+      setUploadStep(0);
     },
   });
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (file && file.type === 'application/pdf') {
+      setIsProcessing(true);
+      setUploadStep(0);
+      setUploadResult(null);
+
+      // Animar pasos mientras se procesa
+      const stepDurations = [300, 400, 500, 400, 300];
+      for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, stepDurations[i]));
+        setUploadStep(i + 1);
+      }
+
+      // Hacer la petición real
       uploadMutation.mutate(file);
     }
   };
@@ -183,6 +210,8 @@ export default function WeeklyPlanning() {
   const closeModal = () => {
     setShowUploadModal(false);
     setUploadResult(null);
+    setUploadStep(0);
+    setIsProcessing(false);
     uploadMutation.reset();
   };
 
@@ -214,27 +243,85 @@ export default function WeeklyPlanning() {
     return t.days[dayKeys[index]];
   };
 
-  const getShiftDisplay = (shift: any) => {
+  // Obtener mapa de elasticidad por fecha desde loadExplanation
+  const getElasticityByDate = (): Record<string, { extraMin: number; canCover: boolean }> => {
+    const map: Record<string, { extraMin: number; canCover: boolean }> = {};
+    if (loadExplanation?.days) {
+      for (const day of loadExplanation.days) {
+        const couv = (day as any).daily_distribution?.periods?.couvertures;
+        if (couv?.can_cover_with_elasticity && couv.elasticity_extra_per_person_min > 0) {
+          map[day.date] = {
+            extraMin: couv.elasticity_extra_per_person_min,
+            canCover: true,
+          };
+        }
+      }
+    }
+    return map;
+  };
+
+  const elasticityByDate = getElasticityByDate();
+
+  const getShiftDisplay = (shift: any, elasticityInfo?: { extraMin: number; canCover: boolean }) => {
     if (!shift || shift.is_day_off) return null;
 
-    const colorClass = getShiftColor(shift.shift);
     const startTime = shift.start_time?.slice(0, 5) || '09:00';
     const endTime = shift.end_time?.slice(0, 5) || '17:00';
     const hours = shift.hours || 8;
+    const freeHours = shift.free_hours || 0;
 
-    // Calcular hora de almuerzo (depende del turno)
-    const startHour = parseInt(startTime.split(':')[0]);
-    const lunchTime = startHour < 12 ? '12:30' : '18:30'; // Mañana: 12:30, Tarde: 18:30
+    const isMorning = shift.shift?.includes('MANANA') || shift.shift?.includes('DIA') || shift.shift?.includes('JOUR');
+    const isEvening = shift.shift?.includes('TARDE') || shift.shift?.includes('SOIR') || shift.shift?.includes('EVENING');
+    const hasElasticity = isEvening && elasticityInfo?.canCover && elasticityInfo.extraMin > 0;
+
+    // Colores según turno
+    const gradientBg = isMorning
+      ? 'bg-gradient-to-br from-sky-100 to-blue-50'
+      : 'bg-gradient-to-br from-amber-100 to-orange-50';
+    const textColor = isMorning ? 'text-sky-800' : 'text-amber-800';
+    const borderStyle = hasElasticity ? 'ring-2 ring-blue-400' : 'border border-gray-200';
 
     return (
-      <div className={`px-2 py-1.5 rounded border text-xs ${colorClass}`}>
-        <div className="font-semibold">{startTime}</div>
-        <div className="text-[10px] text-gray-500 flex items-center gap-1">
-          <span>🍽️</span>
-          <span>{lunchTime}</span>
+      <div className={`relative rounded-lg ${gradientBg} ${borderStyle} shadow-sm hover:shadow-md transition-shadow`}>
+        <div className="p-2">
+          {/* Horarios con iconos */}
+          <div className="space-y-0.5">
+            <div className={`flex items-center justify-center gap-1.5 text-xs ${textColor}`}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="font-semibold">{startTime}</span>
+            </div>
+            <div className={`flex items-center justify-center gap-1.5 text-xs ${textColor}`}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              <span className="font-semibold">{endTime}</span>
+            </div>
+          </div>
+
+          {/* Horas de trabajo / Horas libres */}
+          <div className="text-center mt-1">
+            <span className="text-sm font-semibold text-gray-600">{hours}h</span>
+            {freeHours > 0 && (
+              <>
+                <span className="text-xs text-gray-300">/</span>
+                <span className="text-xs text-red-400">
+                  {freeHours >= 1 ? `${freeHours}h` : `${Math.round(freeHours * 60)}m`}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Elasticidad */}
+          {hasElasticity && (
+            <div className="mt-1 text-center">
+              <span className="text-[9px] font-medium text-blue-600">
+                ⚡+{elasticityInfo.extraMin}m
+              </span>
+            </div>
+          )}
         </div>
-        <div className="text-[10px] opacity-75">{hours}h</div>
-        <div className="font-semibold">{endTime}</div>
       </div>
     );
   };
@@ -268,7 +355,7 @@ export default function WeeklyPlanning() {
               </div>
 
               {/* Upload Area */}
-              {!uploadResult && !uploadMutation.isPending && (
+              {!uploadResult && !isProcessing && (
                 <div
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
@@ -298,11 +385,31 @@ export default function WeeklyPlanning() {
                 </div>
               )}
 
-              {/* Loading */}
-              {uploadMutation.isPending && (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">{t.weekly.processingPdf}</p>
+              {/* Processing Animation */}
+              {isProcessing && (
+                <div className="py-12 text-center">
+                  {/* Spinner */}
+                  <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
+                    <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  </div>
+
+                  {/* Status text */}
+                  <p className={clsx(
+                    'text-lg font-medium transition-colors duration-300',
+                    uploadSteps[uploadStep]?.color || 'text-gray-600'
+                  )}>
+                    {uploadSteps[uploadStep]?.icon} {uploadSteps[uploadStep]?.text}
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="mt-6 max-w-xs mx-auto">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-sky-500 via-blue-500 to-emerald-500 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(uploadStep / (uploadSteps.length - 1)) * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -442,17 +549,33 @@ export default function WeeklyPlanning() {
 
               {/* Schedule Grid */}
               {byEmployee && Object.keys(byEmployee).length > 0 && (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="p-4 border-b">
+                <div className={clsx(
+                  "bg-white rounded-lg shadow overflow-hidden transition-all duration-500",
+                  isAnimatingCalendar && "ring-2 ring-blue-400 ring-opacity-50"
+                )}>
+                  <div className="p-4 border-b flex items-center justify-between">
                     <h4 className="font-semibold">{t.weekly.scheduleByEmployee}</h4>
+                    {isAnimatingCalendar && (
+                      <span className="text-sm text-blue-600 animate-pulse flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
+                        Cargando planificación...
+                      </span>
+                    )}
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="text-left p-3 font-semibold border-b w-48">{t.weekly.employee}</th>
-                          {getWeekDays(selectedPlan.week_start_date).map((day) => (
-                            <th key={day.toISOString()} className="text-center p-3 font-semibold border-b min-w-24">
+                          {getWeekDays(selectedPlan.week_start_date).map((day, dayIndex) => (
+                            <th
+                              key={day.toISOString()}
+                              className={clsx(
+                                "text-center p-3 font-semibold border-b min-w-24 transition-all duration-300",
+                                isAnimatingCalendar && buildStep <= dayIndex && "opacity-30 bg-gray-100"
+                              )}
+                              style={isAnimatingCalendar ? { transitionDelay: `${dayIndex * 50}ms` } : undefined}
+                            >
                               <div className="text-sm">{format(day, 'EEE', { locale: dateLocale })}</div>
                               <div className="text-xs text-gray-500 font-normal">
                                 {format(day, 'd MMM', { locale: dateLocale })}
@@ -463,35 +586,60 @@ export default function WeeklyPlanning() {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(byEmployee).map(([key, emp]: [string, any]) => {
+                        {Object.entries(byEmployee).map(([key, emp]: [string, any], empIndex: number) => {
                           const weekDays = getWeekDays(selectedPlan.week_start_date);
                           const shiftsByDate: Record<string, any> = {};
                           emp.shifts.forEach((shift: any) => {
                             shiftsByDate[shift.date] = shift;
                           });
 
-                          const totalHours = emp.shifts.reduce(
-                            (sum: number, s: any) => sum + (s.is_day_off ? 0 : s.hours),
-                            0
-                          );
+                          // Calcular horas totales incluyendo elasticidad
+                          const totalHours = emp.shifts.reduce((sum: number, s: any) => {
+                            if (s.is_day_off) return sum;
+                            const baseHours = s.hours || 0;
+                            const elasticity = elasticityByDate[s.date];
+                            const isEvening = s.shift?.includes('TARDE') || s.shift?.includes('SOIR') || s.shift?.includes('EVENING');
+                            const extraHours = (isEvening && elasticity?.canCover) ? (elasticity.extraMin / 60) : 0;
+                            return sum + baseHours + extraHours;
+                          }, 0);
+
+                          const showRow = !isAnimatingCalendar || buildStep > 0;
 
                           return (
-                            <tr key={key} className="border-b hover:bg-gray-50">
+                            <tr
+                              key={key}
+                              className={clsx(
+                                "border-b hover:bg-gray-50 transition-all duration-300",
+                                isAnimatingCalendar && !showRow && "opacity-0"
+                              )}
+                              style={isAnimatingCalendar ? { transitionDelay: `${empIndex * 80}ms` } : undefined}
+                            >
                               <td className="p-3">
                                 <div className="font-medium text-gray-900">{emp.name}</div>
                                 <div className="text-xs text-gray-500">{emp.role}</div>
                               </td>
-                              {weekDays.map((day) => {
+                              {weekDays.map((day, dayIndex) => {
                                 const dateStr = format(day, 'yyyy-MM-dd');
                                 const shift = shiftsByDate[dateStr];
+                                const elasticityInfo = elasticityByDate[dateStr];
+                                const showCell = !isAnimatingCalendar || buildStep > dayIndex;
 
                                 return (
-                                  <td key={dateStr} className="text-center p-2">
+                                  <td
+                                    key={dateStr}
+                                    className={clsx(
+                                      "text-center p-2 transition-all duration-300",
+                                      isAnimatingCalendar && !showCell && "opacity-0 scale-75"
+                                    )}
+                                    style={isAnimatingCalendar ? { transitionDelay: `${dayIndex * 40 + empIndex * 30}ms` } : undefined}
+                                  >
                                     {shift ? (
                                       shift.is_day_off ? (
                                         <span className="text-gray-300 text-lg">-</span>
                                       ) : (
-                                        getShiftDisplay(shift)
+                                        <div className={isAnimatingCalendar && showCell ? 'animate-scaleIn' : ''}>
+                                          {getShiftDisplay(shift, elasticityInfo)}
+                                        </div>
                                       )
                                     ) : (
                                       <span className="inline-block px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-medium">
@@ -501,8 +649,11 @@ export default function WeeklyPlanning() {
                                   </td>
                                 );
                               })}
-                              <td className="text-center p-3 font-bold text-gray-900">
-                                {totalHours}h
+                              <td className={clsx(
+                                "text-center p-3 font-bold text-gray-900 transition-all duration-500",
+                                isAnimatingCalendar && buildStep < 7 && "opacity-0"
+                              )}>
+                                {totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}h
                               </td>
                             </tr>
                           );
@@ -593,223 +744,14 @@ export default function WeeklyPlanning() {
                                 </span>
                               </div>
 
-                              {/* Distribución del día */}
-                              {(() => {
-                                const numDay = day.assigned.DAY.length;
-                                const numEvening = day.assigned.EVENING.length;
-                                const totalDeparts = day.forecast.departures;
-                                const totalRecouches = stays;
-                                const totalRooms = totalDeparts + totalRecouches;
-                                const occupied = day.forecast.occupied;
-
-                                // Helper para obtener TaskType por código
-                                // taskTypes puede ser array directo o { results: [...] }
-                                const taskTypesArray = Array.isArray(taskTypes) ? taskTypes : taskTypes?.results || [];
-                                const getTaskType = (code: string) =>
-                                  taskTypesArray.find((t: any) => t.code === code);
-
-                                // Helper para calcular minutos entre dos tiempos (HH:MM:SS)
-                                const timeToMinutes = (timeStr: string | null) => {
-                                  if (!timeStr) return 0;
-                                  const [h, m] = timeStr.split(':').map(Number);
-                                  return h * 60 + m;
-                                };
-
-                                // Tiempos de tareas desde admin (fallback a valores por defecto)
-                                const departTask = getTaskType('DEPART');
-                                const recouchTask = getTaskType('RECOUCH');
-                                const couvTask = getTaskType('COUVERTURE');
-
-                                const DEPART_MIN = departTask?.base_minutes || 50;
-                                const RECOUCH_MIN = recouchTask?.base_minutes || 20;
-                                const COUV_MIN = couvTask?.base_minutes || 20;
-
-                                // Períodos desde admin (fallback a valores por defecto)
-                                // Calcular período de couverture basado en earliest_start y latest_end del TaskType
-                                const couvStart = couvTask?.earliest_start_time;
-                                const couvEnd = couvTask?.latest_end_time;
-                                const COUV_PERIOD_MIN = couvStart && couvEnd
-                                  ? timeToMinutes(couvEnd) - timeToMinutes(couvStart)
-                                  : 210;
-
-                                // Períodos de trabajo (simplificado por ahora)
-                                const P1_MIN = 210; // 09:00-12:30 = 3.5h (mañana sola)
-                                const P2_MIN = 210; // 13:30-17:00 = 3.5h (mañana + tarde)
-                                const P3_MIN = 90;  // 17:00-18:30 = 1.5h (tarde sola)
-
-                                // ========== CÁLCULO DE NECESIDADES ==========
-
-                                // Trabajo de couvertures (en minutos)
-                                const totalCouvWorkMin = occupied * COUV_MIN;
-
-                                // Tiempo disponible por par para limpieza (P1 + P2 + P3 para tarde, solo P1+P2 para mañana)
-                                // Turno mañana: trabaja P1 + P2 = 7h = 420 min
-                                // Turno tarde: trabaja P2 + P3 + COUV = 7h = 420 min (pero P3 y COUV se superponen con mañana solo en P2)
-
-                                // Simplificación:
-                                // - Una pareja de mañana puede trabajar 7h en habitaciones
-                                // - Una pareja de tarde puede trabajar ~5.5h en habitaciones + 2.5h en couvertures
-
-                                // Personas mínimas necesarias para couvertures
-                                const minPersonsForCouv = Math.ceil(totalCouvWorkMin / COUV_PERIOD_MIN);
-
-                                // ========== CALCULAR PAREJAS REALES ==========
-                                // teams puede ser array directo o { results: [...] }
-                                const teamsArray = Array.isArray(teams) ? teams : teams?.results || [];
-
-                                // Función para calcular parejas en un turno
-                                const calculatePairs = (assignedEmployees: any[]) => {
-                                  const employeeIds = assignedEmployees.map(a => a.employee_id || a.id);
-                                  const employeeNames = assignedEmployees.map(a => a.employee?.split(' ')[0] || a.employee);
-
-                                  let configuredPairs: string[][] = [];  // Parejas de equipos configurados
-                                  let tempPairs: string[][] = [];        // Parejas temporales
-                                  let solos: string[] = [];              // Personas sin pareja
-                                  let usedEmployees = new Set<number>();
-
-                                  // 1. Buscar parejas configuradas (equipos donde ambos miembros están asignados)
-                                  teamsArray.forEach((team: any) => {
-                                    const memberIds = team.members?.map((m: any) => m.id) ||
-                                                     team.member_ids || [];
-                                    const assignedMembers = memberIds.filter((id: number) => employeeIds.includes(id));
-
-                                    // Si al menos 2 miembros del equipo están asignados, forman pareja
-                                    if (assignedMembers.length >= 2) {
-                                      // Tomar los primeros 2
-                                      const pair = assignedMembers.slice(0, 2);
-                                      pair.forEach((id: number) => usedEmployees.add(id));
-
-                                      // Obtener nombres
-                                      const pairNames = pair.map((id: number) => {
-                                        const idx = employeeIds.indexOf(id);
-                                        return idx >= 0 ? employeeNames[idx] : '?';
-                                      });
-                                      configuredPairs.push(pairNames);
-                                    }
-                                  });
-
-                                  // 2. Empleados sin pareja configurada pueden formar parejas temporales
-                                  const remainingEmployees = assignedEmployees.filter(
-                                    a => !usedEmployees.has(a.employee_id || a.id)
-                                  );
-
-                                  // Formar parejas temporales con los restantes
-                                  for (let i = 0; i < remainingEmployees.length; i += 2) {
-                                    if (i + 1 < remainingEmployees.length) {
-                                      tempPairs.push([
-                                        remainingEmployees[i].employee?.split(' ')[0] || '?',
-                                        remainingEmployees[i + 1].employee?.split(' ')[0] || '?'
-                                      ]);
-                                    } else {
-                                      // Impar - queda solo
-                                      solos.push(remainingEmployees[i].employee?.split(' ')[0] || '?');
-                                    }
-                                  }
-
-                                  return {
-                                    configuredPairs,
-                                    tempPairs,
-                                    solos,
-                                    totalPairs: configuredPairs.length + tempPairs.length,
-                                    totalSolos: solos.length
-                                  };
-                                };
-
-                                const dayPairInfo = calculatePairs(day.assigned.DAY);
-                                const eveningPairInfo = calculatePairs(day.assigned.EVENING);
-                                // P2: combinar ambos turnos - solos pueden formar parejas temporales entre sí
-                                const p2PairInfo = calculatePairs([...day.assigned.DAY, ...day.assigned.EVENING]);
-
-                                const pairsDay = dayPairInfo.totalPairs;
-                                const pairsEvening = eveningPairInfo.totalPairs;
-                                const pairsP2 = p2PairInfo.totalPairs;  // Parejas combinadas en P2
-                                const solosDay = dayPairInfo.totalSolos;
-                                const solosEvening = eveningPairInfo.totalSolos;
-                                const solosP2 = p2PairInfo.totalSolos;
-
-                                // Capacidad para couvertures
-                                const couvCapacity = numEvening * COUV_PERIOD_MIN;
-
-                                // ========== DISTRIBUCIÓN DEL TRABAJO ==========
-
-                                let departsLeft = totalDeparts;
-                                let recouchesLeft = totalRecouches;
-
-                                // P1: Solo mañana (departs primero, luego recouches)
-                                const p1Capacity = pairsDay * P1_MIN;
-                                const departsDoneP1 = Math.min(departsLeft, Math.floor(p1Capacity / DEPART_MIN));
-                                let p1Used = departsDoneP1 * DEPART_MIN;
-                                departsLeft -= departsDoneP1;
-                                const recouchDoneP1 = Math.min(recouchesLeft, Math.floor((p1Capacity - p1Used) / RECOUCH_MIN));
-                                p1Used += recouchDoneP1 * RECOUCH_MIN;
-                                recouchesLeft -= recouchDoneP1;
-
-                                // P2: Mañana + Tarde juntos (parejas combinadas - solos pueden emparejarse)
-                                const p2Pairs = pairsP2;
-                                const p2Capacity = p2Pairs * P2_MIN;
-                                const departsDoneP2 = Math.min(departsLeft, Math.floor(p2Capacity / DEPART_MIN));
-                                let p2Used = departsDoneP2 * DEPART_MIN;
-                                departsLeft -= departsDoneP2;
-                                const recouchDoneP2 = Math.min(recouchesLeft, Math.floor((p2Capacity - p2Used) / RECOUCH_MIN));
-                                p2Used += recouchDoneP2 * RECOUCH_MIN;
-                                recouchesLeft -= recouchDoneP2;
-
-                                // P3: Solo tarde termina
-                                const p3Capacity = pairsEvening * P3_MIN;
-                                const departsDoneP3 = Math.min(departsLeft, Math.floor(p3Capacity / DEPART_MIN));
-                                let p3Used = departsDoneP3 * DEPART_MIN;
-                                departsLeft -= departsDoneP3;
-                                const recouchDoneP3 = Math.min(recouchesLeft, Math.floor((p3Capacity - p3Used) / RECOUCH_MIN));
-                                p3Used += recouchDoneP3 * RECOUCH_MIN;
-                                recouchesLeft -= recouchDoneP3;
-
-                                // ========== CALCULAR TIEMPO SOBRANTE POR PERÍODO ==========
-
-                                const p1Spare = p1Capacity - p1Used;  // minutos sobrantes en P1
-                                const p2Spare = p2Capacity - p2Used;  // minutos sobrantes en P2
-                                const p3Spare = p3Capacity - p3Used;  // minutos sobrantes en P3
-                                const couvSpare = couvCapacity - totalCouvWorkMin;  // minutos sobrantes/faltantes en couv
-
-                                // ========== VERIFICAR DÉFICIT ==========
-
-                                const roomsDeficit = departsLeft + recouchesLeft; // habitaciones sin hacer
-                                const couvDeficit = Math.max(0, -couvSpare); // minutos faltantes couv (si es negativo)
-                                const couvDeficitPersons = couvDeficit > 0 ? Math.ceil(couvDeficit / COUV_PERIOD_MIN) : 0;
-
-                                // Helper para formatear tiempo sobrante
-                                const formatSpare = (minutes: number) => {
-                                  if (minutes === 0) return null;
-                                  const absMin = Math.abs(minutes);
-                                  const sign = minutes > 0 ? '+' : '-';
-                                  // Si es menos de 60 min, mostrar en minutos
-                                  if (absMin < 60) {
-                                    return `${sign}${Math.round(absMin)}min`;
-                                  }
-                                  // Si es 60+ min, mostrar en horas
-                                  const hours = (absMin / 60).toFixed(1);
-                                  return `${sign}${hours}h`;
-                                };
-
-                                // Nombres para mostrar (agrupados por parejas)
-                                const formatPairNames = (pairInfo: typeof dayPairInfo) => {
-                                  const parts: string[] = [];
-                                  pairInfo.configuredPairs.forEach(pair => parts.push(`(${pair.join('+')})`));
-                                  pairInfo.tempPairs.forEach(pair => parts.push(`[${pair.join('+')}]`));
-                                  pairInfo.solos.forEach(solo => parts.push(solo));
-                                  return parts.join(' · ');
-                                };
-
-                                const dayNames = formatPairNames(dayPairInfo);
-                                const eveningNames = formatPairNames(eveningPairInfo);
-                                // Para couvertures: mostrar nombres individuales (no parejas)
-                                const eveningIndividualNames = day.assigned.EVENING
-                                  .map((a: any) => a.employee?.split(' ')[0] || '?')
-                                  .join(', ');
-
-                                // Usar valores calculados de parejas reales
-                                const soloDay = solosDay;
-                                const soloEvening = solosEvening;
-                                const soloP2 = solosP2;
+                              {/* Distribución del día - usando datos pre-calculados del backend */}
+                              {(day as any).daily_distribution && (() => {
+                                const dist = (day as any).daily_distribution;
+                                const p1 = dist.periods.p1;
+                                const p2 = dist.periods.p2;
+                                const p3 = dist.periods.p3;
+                                const couv = dist.periods.couvertures;
+                                const summary = dist.summary;
 
                                 return (
                                   <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-200 overflow-hidden">
@@ -817,11 +759,17 @@ export default function WeeklyPlanning() {
                                     <div className="bg-gray-100 px-3 py-2 border-b border-gray-200">
                                       <div className="flex justify-between items-center text-sm">
                                         <span className="font-semibold text-gray-700">{t.weekly.legend.dailyDistribution}</span>
-                                        <div className="flex gap-3 text-xs">
-                                          <span className="text-gray-500">{totalRooms} {t.weekly.legend.rooms}</span>
-                                          <span className="text-gray-500">{occupied} {t.weekly.legend.couv}</span>
-                                          {(roomsDeficit > 0 || couvDeficitPersons > 0) && (
-                                            <span className="text-red-600 font-medium">⚠ Falta personal</span>
+                                        <div className="flex gap-2 text-xs">
+                                          <span className="text-red-600 font-medium">{summary.total_departs}D</span>
+                                          <span className="text-gray-400">·</span>
+                                          <span className="text-green-600 font-medium">{summary.total_recouches}R</span>
+                                          <span className="text-gray-400">·</span>
+                                          <span className="text-purple-600 font-medium">{summary.total_couvertures}C</span>
+                                          {summary.has_deficit && (
+                                            <span className="text-red-600 font-medium ml-1">⚠</span>
+                                          )}
+                                          {summary.couv_needs_more_persons && (
+                                            <span className="text-yellow-700 font-medium ml-1">💡+{summary.couv_extra_persons_needed}</span>
                                           )}
                                         </div>
                                       </div>
@@ -833,32 +781,32 @@ export default function WeeklyPlanning() {
                                         <div className="text-lg">🌅</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
-                                            <span className="font-medium text-blue-700 text-sm">09:00 - 12:30</span>
+                                            <span className="font-medium text-blue-700 text-sm">{p1.time_range}</span>
                                             <div className="flex items-center gap-2">
                                               <span className="text-xs text-gray-500">
-                                                {t.weekly.legend.morningAlone} ({pairsDay} {pairsDay === 1 ? 'par' : 'pares'})
-                                                {soloDay > 0 && <span className="text-yellow-600 ml-1">+{soloDay} solo</span>}
+                                                {t.weekly.legend.morningAlone} ({p1.pairs} {p1.pairs === 1 ? 'par' : 'pares'})
+                                                {p1.solos > 0 && <span className="text-yellow-600 ml-1">+{p1.solos} solo</span>}
                                               </span>
-                                              {formatSpare(p1Spare) && (
-                                                <span className={`text-[10px] font-medium ${p1Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                  {formatSpare(p1Spare)}
+                                              {p1.spare.display && (
+                                                <span className={`text-[10px] font-medium ${p1.spare.is_positive ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {p1.spare.display}
                                                 </span>
                                               )}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{departsDoneP1 + recouchDoneP1} {t.weekly.legend.rooms}</span>
-                                            {departsDoneP1 > 0 && <span className="text-red-600 ml-1">({departsDoneP1} {t.weekly.legend.depart})</span>}
-                                            {recouchDoneP1 > 0 && <span className="text-green-600 ml-1">({recouchDoneP1} {t.weekly.legend.recouch})</span>}
+                                            <span className="font-medium">{p1.rooms_done} {t.weekly.legend.rooms}</span>
+                                            {p1.departs_done > 0 && <span className="text-red-600 ml-1">({p1.departs_done} {t.weekly.legend.depart})</span>}
+                                            {p1.recouch_done > 0 && <span className="text-green-600 ml-1">({p1.recouch_done} {t.weekly.legend.recouch})</span>}
                                           </div>
-                                          {numDay > 0 && <div className="text-xs text-blue-600 mt-0.5">{dayNames}</div>}
+                                          {p1.work_display && <div className="text-xs text-blue-600 mt-0.5">{p1.work_display}</div>}
                                         </div>
                                       </div>
 
                                       {/* Almuerzo Mañana */}
                                       <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
                                         <div className="text-base">🍽️</div>
-                                        <span className="text-xs text-gray-500">12:30 - 13:30 {t.weekly.legend.morningLunch}</span>
+                                        <span className="text-xs text-gray-500">{dist.periods.lunch_morning.time_range} {t.weekly.legend.morningLunch}</span>
                                       </div>
 
                                       {/* Período 2: Mañana + Tarde */}
@@ -866,29 +814,25 @@ export default function WeeklyPlanning() {
                                         <div className="text-lg">🔄</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
-                                            <span className="font-medium text-purple-700 text-sm">13:30 - 17:00</span>
+                                            <span className="font-medium text-purple-700 text-sm">{p2.time_range}</span>
                                             <div className="flex items-center gap-2">
                                               <span className="text-xs text-gray-500">
-                                                {t.weekly.legend.morningEvening} ({p2Pairs} {p2Pairs === 1 ? 'par' : 'pares'})
-                                                {soloP2 > 0 && <span className="text-yellow-600 ml-1">+{soloP2} solo</span>}
+                                                {t.weekly.legend.morningEvening} ({p2.pairs} {p2.pairs === 1 ? 'par' : 'pares'})
+                                                {p2.solos > 0 && <span className="text-yellow-600 ml-1">+{p2.solos} solo</span>}
                                               </span>
-                                              {formatSpare(p2Spare) && (
-                                                <span className={`text-[10px] font-medium ${p2Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                  {formatSpare(p2Spare)}
+                                              {p2.spare.display && (
+                                                <span className={`text-[10px] font-medium ${p2.spare.is_positive ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {p2.spare.display}
                                                 </span>
                                               )}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{departsDoneP2 + recouchDoneP2} {t.weekly.legend.rooms}</span>
-                                            {departsDoneP2 > 0 && <span className="text-red-600 ml-1">({departsDoneP2} {t.weekly.legend.depart})</span>}
-                                            {recouchDoneP2 > 0 && <span className="text-green-600 ml-1">({recouchDoneP2} {t.weekly.legend.recouch})</span>}
+                                            <span className="font-medium">{p2.rooms_done} {t.weekly.legend.rooms}</span>
+                                            {p2.departs_done > 0 && <span className="text-red-600 ml-1">({p2.departs_done} {t.weekly.legend.depart})</span>}
+                                            {p2.recouch_done > 0 && <span className="text-green-600 ml-1">({p2.recouch_done} {t.weekly.legend.recouch})</span>}
                                           </div>
-                                          <div className="text-xs mt-0.5">
-                                            {numDay > 0 && <span className="text-blue-600">{dayNames}</span>}
-                                            {numDay > 0 && numEvening > 0 && <span className="text-gray-400 mx-1">·</span>}
-                                            {numEvening > 0 && <span className="text-orange-600">{eveningNames}</span>}
-                                          </div>
+                                          {p2.work_display && <div className="text-xs text-purple-600 mt-0.5">{p2.work_display}</div>}
                                         </div>
                                       </div>
 
@@ -897,101 +841,112 @@ export default function WeeklyPlanning() {
                                         <div className="text-lg">⏰</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
-                                            <span className="font-medium text-yellow-700 text-sm">17:00 - 18:30</span>
+                                            <span className="font-medium text-yellow-700 text-sm">{p3.time_range}</span>
                                             <div className="flex items-center gap-2">
                                               <span className="text-xs text-gray-500">
-                                                {t.weekly.legend.eveningFinishes} ({pairsEvening} {pairsEvening === 1 ? 'par' : 'pares'})
-                                                {soloEvening > 0 && <span className="text-yellow-600 ml-1">+{soloEvening} solo</span>}
+                                                {t.weekly.legend.eveningFinishes} ({p3.pairs} {p3.pairs === 1 ? 'par' : 'pares'})
+                                                {p3.solos > 0 && <span className="text-yellow-600 ml-1">+{p3.solos} solo</span>}
                                               </span>
-                                              {formatSpare(p3Spare) && (
-                                                <span className={`text-[10px] font-medium ${p3Spare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                  {formatSpare(p3Spare)}
+                                              {p3.spare.display && (
+                                                <span className={`text-[10px] font-medium ${p3.spare.is_positive ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {p3.spare.display}
                                                 </span>
                                               )}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            {(departsDoneP3 + recouchDoneP3) > 0
+                                            {p3.rooms_done > 0
                                               ? <>
-                                                  <span className="font-medium">{departsDoneP3 + recouchDoneP3} {t.weekly.legend.rooms}</span>
-                                                  {departsDoneP3 > 0 && <span className="text-red-600 ml-1">({departsDoneP3} {t.weekly.legend.depart})</span>}
-                                                  {recouchDoneP3 > 0 && <span className="text-green-600 ml-1">({recouchDoneP3} {t.weekly.legend.recouch})</span>}
+                                                  <span className="font-medium">{p3.rooms_done} {t.weekly.legend.rooms}</span>
+                                                  {p3.departs_done > 0 && <span className="text-red-600 ml-1">({p3.departs_done} {t.weekly.legend.depart})</span>}
+                                                  {p3.recouch_done > 0 && <span className="text-green-600 ml-1">({p3.recouch_done} {t.weekly.legend.recouch})</span>}
                                                 </>
                                               : <span className="text-green-600">{t.weekly.legend.noPending}</span>
                                             }
-                                            {roomsDeficit > 0 && <span className="text-red-600 font-medium ml-2">⚠ {roomsDeficit} {t.weekly.legend.rooms} sin hacer!</span>}
+                                            {p3.rooms_deficit > 0 && <span className="text-red-600 font-medium ml-2">⚠ {p3.rooms_deficit} {t.weekly.legend.rooms} sin hacer!</span>}
                                           </div>
-                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningNames}</div>}
+                                          {p3.work_display && <div className="text-xs text-orange-600 mt-0.5">{p3.work_display}</div>}
                                         </div>
                                       </div>
 
                                       {/* Almuerzo Tarde */}
                                       <div className="px-3 py-1.5 bg-gray-50 flex items-center gap-3">
                                         <div className="text-base">🍽️</div>
-                                        <span className="text-xs text-gray-500">18:30 - 19:00 {t.weekly.legend.eveningLunch}</span>
+                                        <span className="text-xs text-gray-500">{dist.periods.lunch_evening.time_range} {t.weekly.legend.eveningLunch}</span>
                                       </div>
 
                                       {/* Couverture */}
-                                      <div className={`px-3 py-2 flex items-start gap-3 ${couvDeficitPersons > 0 ? 'bg-red-50' : 'bg-orange-50'}`}>
+                                      <div className={`px-3 py-2 flex items-start gap-3 ${couv.needs_more_persons ? 'bg-yellow-50' : couv.can_cover_with_elasticity ? 'bg-blue-50' : 'bg-orange-50'}`}>
                                         <div className="text-lg">🌙</div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-baseline justify-between">
-                                            <span className="font-medium text-orange-700 text-sm">
-                                              {couvStart ? couvStart.slice(0, 5) : '19:00'} - {couvEnd ? couvEnd.slice(0, 5) : '22:30'}
-                                            </span>
+                                            <span className="font-medium text-orange-700 text-sm">{couv.time_range}</span>
                                             <div className="flex items-center gap-2">
                                               <span className="text-xs text-gray-500">{t.weekly.legend.couvertures}</span>
-                                              {couvDeficitPersons > 0 ? (
-                                                <span className="text-[10px] font-medium text-red-600">
-                                                  ⚠ {numEvening}/{minPersonsForCouv} pers.
+                                              {couv.needs_more_persons ? (
+                                                <span className="text-[10px] font-medium text-yellow-700">
+                                                  {couv.persons_assigned}/{couv.persons_needed} pers. (+{couv.extra_persons_needed})
+                                                </span>
+                                              ) : couv.can_cover_with_elasticity ? (
+                                                <span className="text-[10px] font-medium text-blue-600">
+                                                  ⚡ {couv.persons_assigned} pers. +elasticidad
                                                 </span>
                                               ) : (
                                                 <span className="text-[10px] font-medium text-green-600">
-                                                  ✓ {numEvening} pers.
+                                                  ✓ {couv.persons_assigned} pers.
                                                 </span>
                                               )}
-                                              {formatSpare(couvSpare) && (
-                                                <span className={`text-[10px] font-medium ${couvSpare >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                  {formatSpare(couvSpare)}
+                                              {couv.spare?.display && (
+                                                <span className={`text-[10px] font-medium ${couv.spare.is_positive ? 'text-green-600' : 'text-red-600'}`}>
+                                                  {couv.spare.display}
                                                 </span>
                                               )}
                                             </div>
                                           </div>
                                           <div className="text-xs text-gray-600 mt-0.5">
-                                            <span className="font-medium">{occupied} {t.weekly.legend.couvertures}</span>
-                                            {numEvening > 0 && <span className="text-orange-600 ml-1">(~{Math.round(occupied/numEvening)} {t.weekly.legend.perPerson})</span>}
+                                            <span className="font-medium">{couv.couvertures_count} {t.weekly.legend.couvertures}</span>
+                                            <span className="text-orange-600 ml-1">(~{couv.per_person} {t.weekly.legend.perPerson})</span>
+                                            <span className="text-gray-500 ml-1">· {couv.time_per_person_min}min c/u</span>
                                           </div>
-                                          {numEvening > 0 && <div className="text-xs text-orange-600 mt-0.5">{eveningIndividualNames}</div>}
+                                          {couv.persons_display && <div className="text-xs text-orange-600 mt-0.5">{couv.persons_display}</div>}
+                                          {couv.can_cover_with_elasticity && !couv.needs_more_persons && (
+                                            <div className="text-xs text-blue-700 mt-0.5 font-medium">
+                                              ✓ Déficit de {couv.deficit_min}min cubierto con elasticidad (+{couv.elasticity_extra_per_person_min}min/persona)
+                                            </div>
+                                          )}
+                                          {couv.needs_more_persons && (
+                                            <div className="text-xs text-yellow-700 mt-0.5 font-medium">
+                                              💡 Necesitas {couv.extra_persons_needed} persona(s) más para couvertures (elasticidad insuficiente)
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
 
                                       {/* Balance de horas */}
                                       {(day as any).hours_balance && (
-                                        <div className={`px-3 py-2 border-t border-gray-200 ${(roomsDeficit > 0 || couvDeficitPersons > 0) ? 'bg-red-50' : 'bg-gray-100'}`}>
+                                        <div className={`px-3 py-2 border-t border-gray-200 ${summary.has_deficit ? 'bg-red-50' : summary.couv_needs_more_persons ? 'bg-yellow-50' : 'bg-gray-100'}`}>
                                           <div className="flex flex-col gap-1 text-xs">
                                             <div className="flex items-center gap-2">
                                               <span className="font-semibold text-gray-700">{t.weekly.legend.balance}:</span>
                                               {(() => {
                                                 const balance = (day as any).hours_balance;
-                                                const hasDeficit = roomsDeficit > 0 || couvDeficitPersons > 0;
-                                                const spareClass = hasDeficit ? 'text-red-600' : 'text-green-600';
-                                                const spareIcon = hasDeficit ? '⚠' : '✓';
+                                                const spareClass = summary.has_deficit ? 'text-red-600' : 'text-green-600';
+                                                const spareIcon = summary.has_deficit ? '⚠' : '✓';
                                                 return (
                                                   <>
                                                     <span className="text-gray-600">
                                                       {balance.total.assigned}h {t.weekly.legend.assignedHours} / {balance.total.needed}h {t.weekly.legend.neededHours}
                                                     </span>
                                                     <span className={`font-medium ${spareClass}`}>
-                                                      {spareIcon} {!hasDeficit && balance.total.spare >= 0 ? '+' : ''}{balance.total.spare}h
+                                                      {spareIcon} {!summary.has_deficit && balance.total.spare >= 0 ? '+' : ''}{balance.total.spare}h
                                                     </span>
                                                   </>
                                                 );
                                               })()}
                                             </div>
-                                            {(roomsDeficit > 0 || couvDeficitPersons > 0) && (
+                                            {summary.has_deficit && summary.rooms_deficit > 0 && (
                                               <div className="text-red-600 font-medium">
-                                                {roomsDeficit > 0 && <span>⚠ {roomsDeficit} hab. sin personal </span>}
-                                                {couvDeficitPersons > 0 && <span>⚠ Faltan {couvDeficitPersons} pers. para couvertures</span>}
+                                                ⚠ {summary.rooms_deficit} hab. sin personal
                                               </div>
                                             )}
                                           </div>

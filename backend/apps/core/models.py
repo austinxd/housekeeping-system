@@ -87,16 +87,21 @@ class TaskType(models.Model):
         related_name='task_types',
         help_text="Bloques temporales donde puede realizarse esta tarea"
     )
-    # Tiempo base en minutos (para completar la tarea con persons_required personas)
+    # Tiempo en minutos cuando trabaja una PAREJA (2 personas)
     base_minutes = models.PositiveIntegerField(
         default=30,
-        help_text="Tiempo en minutos para completar la tarea (con el número de personas indicado)"
+        help_text="Tiempo en minutos con PAREJA (2 personas). Ej: DEPART=50min, RECOUCH=20min"
+    )
+    # Tiempo en minutos cuando trabaja UNA persona sola
+    solo_minutes = models.PositiveIntegerField(
+        default=45,
+        help_text="Tiempo en minutos con 1 PERSONA SOLA. Ej: DEPART=75min, RECOUCH=30min"
     )
     # Personas requeridas para cumplir el tiempo base
     persons_required = models.PositiveIntegerField(
-        default=1,
+        default=2,
         validators=[MinValueValidator(1), MaxValueValidator(10)],
-        help_text="Personas necesarias para completar en base_minutes (ej: 2 para DEPART)"
+        help_text="Personas óptimas para la tarea (ej: 2 para DEPART/RECOUCH, 1 para COUVERTURE)"
     )
     # Hora más temprana para iniciar esta tarea (ej: couverture no antes de 19:00)
     earliest_start_time = models.TimeField(
