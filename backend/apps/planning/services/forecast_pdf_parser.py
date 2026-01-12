@@ -56,13 +56,18 @@ class ForecastPDFParser:
                 if page_tables:
                     tables.extend(page_tables)
 
-        # Intentar extraer datos de tablas primero
+        # Intentar parsear el texto primero (más confiable para este formato)
+        result = self._parse_text(full_text)
+        if result and result.get('forecast') and len(result.get('forecast', [])) >= 7:
+            return result
+
+        # Si el texto no funcionó, intentar extraer de tablas
         if tables:
             result = self._parse_tables(tables, full_text)
             if result and result.get('forecast'):
                 return result
 
-        # Si no hay tablas, parsear el texto
+        # Último intento: texto
         return self._parse_text(full_text)
 
     def _parse_tables(self, tables: List, full_text: str) -> Optional[Dict[str, Any]]:
@@ -247,32 +252,63 @@ class ForecastPDFParser:
         lines = text.split('\n')
         forecast_data = []
 
-        # Patrones comunes
-        # Formato: "Lun 12" o "12/01" seguido de números
-        date_pattern = re.compile(
-            r'(?:lun|mar|mi[eé]|jue|vie|s[aá]b|dom|mon|tue|wed|thu|fri|sat|sun)?\s*'
-            r'(\d{1,2})(?:/(\d{1,2}))?',
-            re.IGNORECASE
-        )
+        # Patrón para líneas con datos de Protel/hotel
+        # Formato: "lun., 12.01.2026 15 34,88 28 65,12 33,75 3 6 3 6 28 54 ..."
+        # Días de la semana en francés/español
+        day_names = r'(?:lun|mar|mer|jeu|ven|sam|dim|mi[eé]|s[aá]b|dom)\.'
 
         for line in lines:
-            # Buscar líneas con datos de forecast
-            numbers = re.findall(r'\b(\d{1,3})\b', line)
+            # Buscar líneas que empiecen con día de la semana
+            if not re.match(day_names, line.lower().strip()):
+                continue
 
-            if len(numbers) >= 4:  # fecha + 3 valores mínimo
-                # El primer número podría ser el día
-                day = int(numbers[0])
-                if 1 <= day <= 31:
-                    # Los siguientes son departures, arrivals, occupied
-                    try:
-                        forecast_data.append({
-                            'date': self._build_date(day),
-                            'departures': int(numbers[1]) if len(numbers) > 1 else 0,
-                            'arrivals': int(numbers[2]) if len(numbers) > 2 else 0,
-                            'occupied': int(numbers[3]) if len(numbers) > 3 else 0,
-                        })
-                    except (ValueError, IndexError):
-                        continue
+            # Extraer fecha (formato: dd.mm.yyyy o dd/mm/yyyy)
+            date_match = re.search(r'(\d{1,2})[./](\d{1,2})[./](\d{4})', line)
+            if not date_match:
+                continue
+
+            try:
+                day = int(date_match.group(1))
+                month = int(date_match.group(2))
+                year = int(date_match.group(3))
+                row_date = date(year, month, day)
+            except ValueError:
+                continue
+
+            # Remover la fecha del texto para facilitar extracción
+            line_without_date = line[date_match.end():]
+
+            # Extraer números separados por espacios (no decimales)
+            # Los valores enteros están separados por espacios, los decimales por coma o punto
+            # Primero normalizar: reemplazar comas decimales por puntos
+            clean_line = re.sub(r'(\d),(\d)', r'\1.\2', line_without_date)
+
+            # Separar por espacios y extraer números
+            parts = clean_line.split()
+            numbers = []
+            for part in parts:
+                # Si es un número entero (sin punto decimal), agregarlo
+                if re.match(r'^\d+$', part):
+                    num = int(part)
+                    if num < 1000:  # Filtrar números financieros grandes
+                        numbers.append(num)
+                # Si es decimal, ignorarlo (porcentajes)
+
+            # Estructura esperada:
+            # libres, occupée, arr#, arrPers, dep#, depPers, pres#, presPers
+            # Índices: 0=libres, 1=occupée, 2=arr#, 3=arrPers, 4=dep#, 5=depPers, 6=pres#, 7=presPers
+
+            if len(numbers) >= 8:
+                arrivals = numbers[2]    # Arrivées #
+                departures = numbers[4]  # Départs #
+                occupied = numbers[6]    # Présents # (habitaciones ocupadas)
+
+                forecast_data.append({
+                    'date': row_date,
+                    'departures': departures,
+                    'arrivals': arrivals,
+                    'occupied': occupied,
+                })
 
         if forecast_data:
             # Ordenar y determinar week_start
