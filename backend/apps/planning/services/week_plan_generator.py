@@ -167,20 +167,20 @@ class WeekPlanGenerator:
         """
         Calcula las necesidades de personal por día basándose en la carga calculada.
 
-        Usa la configuración de la BD:
-        - TimeBlock: horas de trabajo por turno
-        - TaskType COUVERTURE: tiempo de couverture para calcular personal EVENING
+        Regla de negocio para EVENING (couvertures):
+        - > 15 couvertures → mínimo 2 personas
+        - ≤ 15 couvertures → 1 persona es suficiente
 
         Returns: Dict con fecha ISO como clave y {'day': n, 'evening': n} como valor
         """
-        from apps.core.models import TimeBlock, TaskType
+        from apps.core.models import TimeBlock
+        from apps.planning.models import Forecast
 
         result = {}
 
         # Obtener configuración desde BD
         day_block = TimeBlock.objects.filter(code='DAY').first()
         evening_block = TimeBlock.objects.filter(code='EVENING').first()
-        couverture_task = TaskType.objects.filter(code='COUVERTURE').first()
 
         # Horas de trabajo por turno
         day_shift_hours = 8.0
@@ -190,20 +190,11 @@ class WeekPlanGenerator:
             end = datetime.combine(week_start, day_block.end_time)
             day_shift_hours = (end - start).total_seconds() / 3600
 
-        # Horas disponibles para couvertures (desde EVENING block o TaskType)
-        evening_couverture_hours = 3.5  # default
-        if couverture_task and couverture_task.earliest_start_time and couverture_task.latest_end_time:
-            from datetime import datetime
-            start = datetime.combine(week_start, couverture_task.earliest_start_time)
-            end = datetime.combine(week_start, couverture_task.latest_end_time)
-            evening_couverture_hours = (end - start).total_seconds() / 3600
-
-        # Mínimo de staff
-        day_min_staff = day_block.min_staff if day_block else 2
-        evening_min_staff = evening_block.min_staff if evening_block else 2
-
         # Contribución del turno EVENING al turno DAY
         evening_helps_hours = float(evening_block.helps_other_shift_hours) if evening_block else 4.5
+
+        # Mínimo de staff para turno día
+        day_min_staff = day_block.min_staff if day_block else 2
 
         # Calcular necesidades por día
         week_days = self._get_week_days(week_start)
@@ -218,26 +209,37 @@ class WeekPlanGenerator:
             day_load = week_load['days'][day_key]
             blocks = day_load.get('blocks', {})
 
+            # Obtener número de couvertures (= habitaciones ocupadas)
+            # desde el forecast
+            forecast = Forecast.objects.filter(date=day).first()
+            couvertures_count = forecast.occupied if forecast else 0
+
+            # REGLA DE NEGOCIO:
+            # > 38 couvertures → 4 personas
+            # > 25 couvertures → 3 personas
+            # > 13 couvertures → 2 personas
+            # 1-13 couvertures → 1 persona
+            # 0 couvertures → 0 personas
+            if couvertures_count > 38:
+                evening_persons = 4
+            elif couvertures_count > 25:
+                evening_persons = 3
+            elif couvertures_count > 13:
+                evening_persons = 2
+            elif couvertures_count > 0:
+                evening_persons = 1
+            else:
+                evening_persons = 0
+
             # Carga del bloque DAY (DEPART + RECOUCH)
             day_block_load = blocks.get('DAY', {})
             day_minutes = day_block_load.get('total_minutes', 0)
             day_hours = day_minutes / 60
 
-            # Carga del bloque EVENING (COUVERTURE)
-            evening_block_load = blocks.get('EVENING', {})
-            evening_minutes = evening_block_load.get('total_minutes', 0)
-            evening_hours = evening_minutes / 60
-
-            # Paso 1: Calcular personas EVENING necesarias para cubrir couvertures
-            evening_persons = 0
-            if evening_hours > 0 and evening_couverture_hours > 0:
-                # Personas necesarias = horas de trabajo / horas disponibles por persona
-                evening_persons = max(evening_min_staff, round(evening_hours / evening_couverture_hours))
-
-            # Paso 2: Calcular contribución del turno EVENING al turno DAY
+            # Calcular contribución del turno EVENING al turno DAY
             evening_contribution_to_day = evening_persons * evening_helps_hours
 
-            # Paso 3: Calcular personas DAY necesarias (restando contribución EVENING)
+            # Calcular personas DAY necesarias (restando contribución EVENING)
             remaining_day_hours = max(0, day_hours - evening_contribution_to_day)
             day_persons = 0
             if remaining_day_hours > 0 and day_shift_hours > 0:
@@ -247,6 +249,7 @@ class WeekPlanGenerator:
             result[day_key] = {
                 'day': day_persons,
                 'evening': evening_persons,
+                'couvertures': couvertures_count,  # Para debug
             }
 
         return result
@@ -381,6 +384,9 @@ class WeekPlanGenerator:
         """
         Asigna turnos de tarde para cubrir couvertures de un día.
 
+        PRIORIDAD: Couvertures DEBEN cubrirse. Si no hay suficientes empleados
+        con horas disponibles, asignar empleados con elasticidad (horas extra).
+
         Args:
             day: Fecha del día
             persons_needed: Número de personas necesarias para couvertures
@@ -395,22 +401,31 @@ class WeekPlanGenerator:
         assignments = []
         assigned_count = 0
 
+        # Primera pasada: empleados con horas disponibles
+        candidates_with_hours = []
+        candidates_over_target = []
+
         for employee in available_employees:
-            if assigned_count >= persons_needed:
-                break
-
             if employee.id in processed_today:
-                continue
-
-            # Verificar si ya cumplió sus horas semanales
-            current_hours = employee_hours.get(employee.id, Decimal('0'))
-            if current_hours >= employee.weekly_hours_target:
                 continue
 
             # Obtener plantilla de turno EVENING
             shift_template = self._get_shift_template_for_block(employee, 'EVENING')
             if not shift_template:
                 continue
+
+            current_hours = employee_hours.get(employee.id, Decimal('0'))
+
+            if current_hours < employee.weekly_hours_target:
+                candidates_with_hours.append((employee, shift_template, current_hours))
+            else:
+                # Empleado ya cumplió horas pero puede trabajar con elasticidad
+                candidates_over_target.append((employee, shift_template, current_hours))
+
+        # Asignar primero los que tienen horas disponibles
+        for employee, shift_template, current_hours in candidates_with_hours:
+            if assigned_count >= persons_needed:
+                break
 
             hours_per_shift = Decimal(str(shift_template.total_hours))
             remaining = employee.weekly_hours_target - current_hours
@@ -426,10 +441,58 @@ class WeekPlanGenerator:
             )
             assignments.append(assignment)
 
-            # Actualizar tracking
             employee_hours[employee.id] = current_hours + assigned_hours
             processed_today.add(employee.id)
             assigned_count += 1
+
+        # Si aún faltan personas, usar empleados con elasticidad
+        if assigned_count < persons_needed:
+            for employee, shift_template, current_hours in candidates_over_target:
+                if assigned_count >= persons_needed:
+                    break
+
+                # Verificar elasticidad del empleado
+                from apps.rules.models import ElasticityRule
+                try:
+                    rule = ElasticityRule.objects.get(elasticity_level=employee.elasticity)
+                    max_extra_hours = Decimal(str(rule.max_extra_hours_week))
+                except ElasticityRule.DoesNotExist:
+                    max_extra_hours = Decimal('0')
+
+                if max_extra_hours <= 0:
+                    continue
+
+                hours_per_shift = Decimal(str(shift_template.total_hours))
+                # Asignar hasta el límite de elasticidad semanal
+                extra_already = max(Decimal('0'), current_hours - employee.weekly_hours_target)
+                remaining_elasticity = max_extra_hours - extra_already
+
+                if remaining_elasticity <= 0:
+                    continue
+
+                assigned_hours = min(remaining_elasticity, hours_per_shift)
+
+                assignment = ShiftAssignment(
+                    week_plan=week_plan,
+                    date=day,
+                    employee=employee,
+                    shift_template=shift_template,
+                    assigned_hours=assigned_hours,
+                    is_day_off=False
+                )
+                assignments.append(assignment)
+
+                employee_hours[employee.id] = current_hours + assigned_hours
+                processed_today.add(employee.id)
+                assigned_count += 1
+
+                # Registrar alerta de uso de elasticidad
+                self.alerts.append({
+                    'type': 'INFO',
+                    'severity': 'LOW',
+                    'title': f'Elasticidad usada: {employee.full_name}',
+                    'message': f'Asignado turno tarde el {day} usando horas extra ({assigned_hours}h)',
+                })
 
         return assignments
 

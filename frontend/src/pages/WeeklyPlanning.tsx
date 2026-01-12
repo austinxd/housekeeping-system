@@ -15,6 +15,8 @@ import { format, parseISO, addDays, isValid } from 'date-fns';
 import { es, fr } from 'date-fns/locale';
 import { clsx } from 'clsx';
 import { useLanguage } from '../i18n';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Safe date parsing to avoid crashes
 const safeParseISO = (dateStr: string | null | undefined): Date | null => {
@@ -51,7 +53,10 @@ export default function WeeklyPlanning() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [buildStep, setBuildStep] = useState(0); // 0-7 para animar cada día
   const [isAnimatingCalendar, setIsAnimatingCalendar] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scheduleRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
 
   // Pasos del proceso de carga
   const uploadSteps = [
@@ -194,6 +199,67 @@ export default function WeeklyPlanning() {
     setUploadStep(0);
     setIsProcessing(false);
     uploadMutation.reset();
+  };
+
+  const handleExportPDF = async () => {
+    if (!scheduleRef.current || !selectedPlan) return;
+
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+
+      // Título
+      const weekDate = safeFormat(selectedPlan.week_start_date, 'd MMMM yyyy', { locale: dateLocale });
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Planning Semanal - ${weekDate}`, margin, 15);
+
+      // Capturar Schedule Grid
+      const scheduleCanvas = await html2canvas(scheduleRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const scheduleImgData = scheduleCanvas.toDataURL('image/png');
+      const scheduleWidth = pageWidth - (margin * 2);
+      const scheduleHeight = (scheduleCanvas.height * scheduleWidth) / scheduleCanvas.width;
+
+      pdf.addImage(scheduleImgData, 'PNG', margin, 25, scheduleWidth, Math.min(scheduleHeight, pageHeight - 40));
+
+      // Si hay leyenda y cabe en la página o necesitamos otra
+      if (legendRef.current) {
+        const legendCanvas = await html2canvas(legendRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+
+        const legendImgData = legendCanvas.toDataURL('image/png');
+        const legendWidth = pageWidth - (margin * 2);
+        const legendHeight = (legendCanvas.height * legendWidth) / legendCanvas.width;
+
+        // Añadir nueva página para la leyenda
+        pdf.addPage();
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Distribución de Carga por Día', margin, 15);
+        pdf.addImage(legendImgData, 'PNG', margin, 25, legendWidth, Math.min(legendHeight, pageHeight - 40));
+      }
+
+      // Guardar
+      const fileName = `planning_${selectedPlan.week_start_date}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -509,6 +575,28 @@ export default function WeeklyPlanning() {
                   </div>
                   <div className="flex gap-2">
                     <button
+                      onClick={handleExportPDF}
+                      disabled={isExporting}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          {t.weekly.exporting}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {t.weekly.exportPdf}
+                        </>
+                      )}
+                    </button>
+                    <button
                       onClick={handleDelete}
                       disabled={deleteMutation.isPending}
                       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
@@ -530,10 +618,13 @@ export default function WeeklyPlanning() {
 
               {/* Schedule Grid */}
               {byEmployee && Object.keys(byEmployee).length > 0 && (
-                <div className={clsx(
-                  "bg-white rounded-lg shadow overflow-hidden transition-all duration-500",
-                  isAnimatingCalendar && "ring-2 ring-blue-400 ring-opacity-50"
-                )}>
+                <div
+                  ref={scheduleRef}
+                  className={clsx(
+                    "bg-white rounded-lg shadow overflow-hidden transition-all duration-500",
+                    isAnimatingCalendar && "ring-2 ring-blue-400 ring-opacity-50"
+                  )}
+                >
                   <div className="p-4 border-b flex items-center justify-between">
                     <h4 className="font-semibold">{t.weekly.scheduleByEmployee}</h4>
                     {isAnimatingCalendar && (
@@ -647,7 +738,7 @@ export default function WeeklyPlanning() {
 
               {/* Legend - Load Explanation */}
               {loadExplanation && loadExplanation.days.length > 0 && (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div ref={legendRef} className="bg-white rounded-lg shadow overflow-hidden">
                   <div className="p-4 border-b bg-gray-50">
                     <h4 className="font-semibold">{t.weekly.legend.title}</h4>
                     <p className="text-sm text-gray-500 mt-1">

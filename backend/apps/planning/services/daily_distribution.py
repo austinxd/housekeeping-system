@@ -251,7 +251,12 @@ class DailyDistributionCalculator:
                     'names': pair.get('names', []), 'departs': 0, 'recouches': 0,
                     'spare_min': period_minutes,
                 })
-            for solo_name in solos:
+            for solo_item in solos:
+                # Handle both dict (with shift info) and string (legacy) formats
+                if isinstance(solo_item, dict):
+                    solo_name = solo_item.get('name', solo_item.get('display', 'Anónimo'))
+                else:
+                    solo_name = solo_item
                 units_work.append({
                     'type': 'solo', 'display': solo_name,
                     'names': [solo_name], 'departs': 0, 'recouches': 0,
