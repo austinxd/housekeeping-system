@@ -232,11 +232,25 @@ class ForecastLoader:
             day_task_hours = day_load['shifts']['DAY']['hours']  # Horas totales DEPART + RECOUCH
             couverture_hours = day_load['shifts']['EVENING']['hours']  # Horas totales COUVERTURE
 
-            # Paso 1: Calcular personas TARDE necesarias para COUVERTURE
-            # Cada persona TARDE puede hacer couvertures durante evening_couverture_hours
-            evening_persons = 0
-            if couverture_hours > 0:
-                evening_persons = max(evening_min_staff, round(couverture_hours / evening_couverture_hours))
+            # Número de couvertures = número de habitaciones ocupadas
+            couvertures_count = day_load['tasks']['COUVERTURE']['count']
+
+            # REGLA DE NEGOCIO SIMPLE:
+            # > 38 couvertures → 4 personas
+            # > 25 couvertures → 3 personas
+            # > 13 couvertures → 2 personas
+            # 1-13 couvertures → 1 persona
+            # 0 couvertures → 0 personas
+            if couvertures_count > 38:
+                evening_persons = 4
+            elif couvertures_count > 25:
+                evening_persons = 3
+            elif couvertures_count > 13:
+                evening_persons = 2
+            elif couvertures_count > 0:
+                evening_persons = 1
+            else:
+                evening_persons = 0
 
             # Paso 2: Esas personas TARDE también ayudan con tareas DAY
             # Cada persona TARDE aporta evening_help_day_hours a tareas DEPART/RECOUCH

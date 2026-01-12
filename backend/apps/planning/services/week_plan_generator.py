@@ -174,7 +174,6 @@ class WeekPlanGenerator:
         Returns: Dict con fecha ISO como clave y {'day': n, 'evening': n} como valor
         """
         from apps.core.models import TimeBlock
-        from apps.planning.models import Forecast
 
         result = {}
 
@@ -210,9 +209,8 @@ class WeekPlanGenerator:
             blocks = day_load.get('blocks', {})
 
             # Obtener número de couvertures (= habitaciones ocupadas)
-            # desde el forecast
-            forecast = Forecast.objects.filter(date=day).first()
-            couvertures_count = forecast.occupied if forecast else 0
+            # desde week_load que tiene el forecast
+            couvertures_count = day_load.get('forecast', {}).get('occupied', 0)
 
             # REGLA DE NEGOCIO:
             # > 38 couvertures → 4 personas
