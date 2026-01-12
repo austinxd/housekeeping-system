@@ -394,9 +394,22 @@ class AssignmentOptimizer:
             room_work_min = (departs * DEPART_MIN) + (recouch * RECOUCH_MIN)
             couv_work_min = couvertures * COUV_MIN
 
-            # Calcular personas necesarias para couvertures
-            couv_capacity_per_person = COUV_MIN_PERIOD // COUV_MIN if COUV_MIN > 0 else 12
-            evening_persons_for_couv = max(2, -(-couvertures // couv_capacity_per_person)) if couv_capacity_per_person > 0 else 2
+            # REGLA DE NEGOCIO para personas tarde (couvertures):
+            # > 38 couvertures → 4 personas
+            # > 25 couvertures → 3 personas
+            # > 13 couvertures → 2 personas
+            # 1-13 couvertures → 1 persona
+            # 0 couvertures → 0 personas
+            if couvertures > 38:
+                evening_persons_for_couv = 4
+            elif couvertures > 25:
+                evening_persons_for_couv = 3
+            elif couvertures > 13:
+                evening_persons_for_couv = 2
+            elif couvertures > 0:
+                evening_persons_for_couv = 1
+            else:
+                evening_persons_for_couv = 0
 
             # Tiempo que tarde ayuda con habitaciones (P2 + P3)
             evening_help_min = evening_persons_for_couv * (P2_MIN + P3_MIN)
