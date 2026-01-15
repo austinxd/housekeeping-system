@@ -2,8 +2,6 @@
 # Script para restaurar backup de base de datos
 # Lee credenciales desde .env
 
-set -e
-
 # Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -105,19 +103,19 @@ echo ""
 echo -e "${YELLOW}[1/3] Eliminando tablas existentes...${NC}"
 
 # Obtener lista de tablas y eliminarlas
-TABLES=$(mysql_exec -N -e "SELECT GROUP_CONCAT(table_name) FROM information_schema.tables WHERE table_schema='$DB_NAME';" 2>/dev/null)
+TABLES=$(mysql_exec -N -e "SELECT GROUP_CONCAT(table_name) FROM information_schema.tables WHERE table_schema='$DB_NAME';")
 
 if [ -n "$TABLES" ] && [ "$TABLES" != "NULL" ]; then
-    mysql_exec -e "SET FOREIGN_KEY_CHECKS=0;" "$DB_NAME" 2>/dev/null
+    mysql_exec -e "SET FOREIGN_KEY_CHECKS=0;" "$DB_NAME"
 
     # Eliminar cada tabla
     IFS=',' read -ra TABLE_ARRAY <<< "$TABLES"
     for table in "${TABLE_ARRAY[@]}"; do
         echo "  Eliminando: $table"
-        mysql_exec -e "DROP TABLE IF EXISTS \`$table\`;" "$DB_NAME" 2>/dev/null
+        mysql_exec -e "DROP TABLE IF EXISTS \`$table\`;" "$DB_NAME" || echo -e "${RED}  Error eliminando $table${NC}"
     done
 
-    mysql_exec -e "SET FOREIGN_KEY_CHECKS=1;" "$DB_NAME" 2>/dev/null
+    mysql_exec -e "SET FOREIGN_KEY_CHECKS=1;" "$DB_NAME"
     echo -e "${GREEN}  ✓ Tablas eliminadas${NC}"
 else
     echo -e "${GREEN}  ✓ BD ya está vacía${NC}"
@@ -149,13 +147,16 @@ echo -e "${YELLOW}[2/3] Importando backup...${NC}"
 echo "  Archivo: $BACKUP_FILE"
 echo "  Tamaño: $(ls -lh "$BACKUP_FILE" | awk '{print $5}')"
 
-mysql_exec "$DB_NAME" < "$BACKUP_FILE" 2>/dev/null
-
-echo -e "${GREEN}  ✓ Backup importado${NC}"
+if mysql_exec "$DB_NAME" < "$BACKUP_FILE"; then
+    echo -e "${GREEN}  ✓ Backup importado${NC}"
+else
+    echo -e "${RED}  Error importando backup${NC}"
+    exit 1
+fi
 
 echo ""
 echo -e "${YELLOW}[3/3] Verificando...${NC}"
-TABLE_COUNT=$(mysql_exec -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME';" 2>/dev/null)
+TABLE_COUNT=$(mysql_exec -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME';")
 echo -e "  Tablas creadas: ${GREEN}$TABLE_COUNT${NC}"
 
 echo ""
