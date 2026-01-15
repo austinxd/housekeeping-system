@@ -994,7 +994,7 @@ class AssignmentOptimizer:
                 days_assigned_pair += 1
 
         # ========== PASO 2: Asignar empleados SIN pareja ==========
-        # Ordenar por horas pendientes
+        # PRIORIDAD: Cubrir couvertures (tarde) ANTES de llenar mañana con exceso
 
         for day_info in days_by_workload:
             day_date = day_info['date']
@@ -1007,137 +1007,101 @@ class AssignmentOptimizer:
             morning_count = len(assignments_by_day[day_key]['morning'])
             evening_count = len(assignments_by_day[day_key]['evening'])
 
-            # === TURNO MAÑANA ===
-            if morning_count < morning_needed:
-                morning_candidates = []
+            # Calcular déficits
+            morning_deficit = morning_needed - morning_count
+            evening_deficit = evening_needed - evening_count
+
+            # Helper para obtener candidatos disponibles
+            def get_available_candidates(shift_type: str):
+                candidates = []
                 for emp_id, state in employee_state.items():
-                    # Saltar si ya cumplió sus horas
                     if state['assigned_hours'] >= state['target_hours']:
                         continue
-                    # Saltar si ya trabaja este día
                     if day_key in state['days_assigned']:
                         continue
-                    # Saltar si es día libre (consecutivo)
                     if is_day_off(emp_id, day_key):
                         continue
-                    # Saltar si no puede trabajar mañana
-                    if not self.can_employee_work_shift(emp_id, 'morning'):
+                    if not self.can_employee_work_shift(emp_id, shift_type):
                         continue
-                    # Saltar si es parte de pareja FIXED (ya procesados)
                     if self.get_partner_id(emp_id) is not None:
                         continue
+                    candidates.append(state)
+                return candidates
 
-                    morning_candidates.append(state)
+            # Helper para asignar empleado a turno
+            def assign_employee(state, shift_type: str):
+                emp = state['employee']
+                emp_id = emp.id
 
-                # Ordenar: FDC primero, más horas pendientes primero
+                remaining = state['target_hours'] - state['assigned_hours']
+                shift_hours = self.day_shift_hours if shift_type == 'morning' else self.evening_shift_hours
+                is_short = (remaining <= self.short_shift_hours + 0.5 and remaining < shift_hours)
+
+                suffix = 'MANANA' if shift_type == 'morning' else 'TARDE'
+                if is_short:
+                    suffix += '_CORTO'
+                    hours = self.short_shift_hours
+                else:
+                    hours = shift_hours
+
+                shift_template = self.shifts.get(f'{emp.role.code}_{suffix}')
+                if not shift_template:
+                    shift_template = self.shifts.get(f'FDC_{suffix}')
+
+                ShiftAssignment.objects.create(
+                    week_plan=week_plan,
+                    date=day_date,
+                    employee=emp,
+                    shift_template=shift_template,
+                    assigned_hours=hours,
+                    is_day_off=False
+                )
+
+                state['assigned_hours'] += hours
+                state['days_assigned'].add(day_key)
+                assignments_by_day[day_key][shift_type].append(emp_id)
+
+                assignments_created.append({
+                    'day': day_names[day_idx],
+                    'date': day_key,
+                    'employee': emp.first_name,
+                    'shift': 'mañana' if shift_type == 'morning' else 'tarde',
+                    'hours': hours,
+                })
+
+            # === PASO 2.1: PRIMERO cubrir TARDE si hay déficit de couvertures ===
+            if evening_deficit > 0:
+                evening_candidates = get_available_candidates('evening')
+                # Priorizar: quien puede SOLO tarde > quien puede ambos
+                evening_candidates.sort(key=lambda s: (
+                    # Primero los que NO pueden mañana (solo tarde)
+                    0 if not self.can_employee_work_shift(s['employee'].id, 'morning') else 1,
+                    # Luego VDC antes que FDC para tarde
+                    0 if s['role'] == 'VDC' else 1,
+                    # Más horas pendientes primero
+                    -(s['target_hours'] - s['assigned_hours']),
+                ))
+
+                for state in evening_candidates[:evening_deficit]:
+                    assign_employee(state, 'evening')
+
+                # Actualizar cuenta
+                evening_count = len(assignments_by_day[day_key]['evening'])
+
+            # === PASO 2.2: LUEGO cubrir MAÑANA con los restantes ===
+            morning_count = len(assignments_by_day[day_key]['morning'])
+            morning_deficit = morning_needed - morning_count
+
+            if morning_deficit > 0:
+                morning_candidates = get_available_candidates('morning')
+                # FDC primero, más horas pendientes primero
                 morning_candidates.sort(key=lambda s: (
                     0 if s['role'] == 'FDC' else 1,
                     -(s['target_hours'] - s['assigned_hours']),
                 ))
 
-                to_assign = morning_needed - morning_count
-                for state in morning_candidates[:to_assign]:
-                    emp = state['employee']
-                    emp_id = emp.id
-
-                    # Determinar si es turno corto
-                    remaining = state['target_hours'] - state['assigned_hours']
-                    is_short = (remaining <= self.short_shift_hours + 0.5 and remaining < self.day_shift_hours)
-
-                    if is_short:
-                        shift_template = self.shifts.get(f'{emp.role.code}_MANANA_CORTO')
-                        hours = self.short_shift_hours
-                    else:
-                        shift_template = self.shifts.get(f'{emp.role.code}_MANANA')
-                        hours = self.day_shift_hours
-
-                    if not shift_template:
-                        shift_template = self.shifts.get('FDC_MANANA')
-                        hours = self.day_shift_hours
-
-                    ShiftAssignment.objects.create(
-                        week_plan=week_plan,
-                        date=day_date,
-                        employee=emp,
-                        shift_template=shift_template,
-                        assigned_hours=hours,
-                        is_day_off=False
-                    )
-
-                    state['assigned_hours'] += hours
-                    state['days_assigned'].add(day_key)
-                    assignments_by_day[day_key]['morning'].append(emp_id)
-
-                    assignments_created.append({
-                        'day': day_names[day_idx],
-                        'date': day_key,
-                        'employee': emp.first_name,
-                        'shift': 'mañana',
-                        'hours': hours,
-                    })
-
-            # === TURNO TARDE ===
-            if evening_count < evening_needed:
-                evening_candidates = []
-                for emp_id, state in employee_state.items():
-                    if state['assigned_hours'] >= state['target_hours']:
-                        continue
-                    if day_key in state['days_assigned']:
-                        continue
-                    if is_day_off(emp_id, day_key):
-                        continue
-                    if not self.can_employee_work_shift(emp_id, 'evening'):
-                        continue
-                    if self.get_partner_id(emp_id) is not None:
-                        continue
-
-                    evening_candidates.append(state)
-
-                # VDC primero para tarde
-                evening_candidates.sort(key=lambda s: (
-                    0 if s['role'] == 'VDC' else 1,
-                    -(s['target_hours'] - s['assigned_hours']),
-                ))
-
-                to_assign = evening_needed - evening_count
-                for state in evening_candidates[:to_assign]:
-                    emp = state['employee']
-                    emp_id = emp.id
-
-                    remaining = state['target_hours'] - state['assigned_hours']
-                    is_short = (remaining <= self.short_shift_hours + 0.5 and remaining < self.evening_shift_hours)
-
-                    if is_short:
-                        shift_template = self.shifts.get(f'{emp.role.code}_TARDE_CORTO')
-                        hours = self.short_shift_hours
-                    else:
-                        shift_template = self.shifts.get(f'{emp.role.code}_TARDE')
-                        hours = self.evening_shift_hours
-
-                    if not shift_template:
-                        shift_template = self.shifts.get('VDC_TARDE')
-                        hours = self.evening_shift_hours
-
-                    ShiftAssignment.objects.create(
-                        week_plan=week_plan,
-                        date=day_date,
-                        employee=emp,
-                        shift_template=shift_template,
-                        assigned_hours=hours,
-                        is_day_off=False
-                    )
-
-                    state['assigned_hours'] += hours
-                    state['days_assigned'].add(day_key)
-                    assignments_by_day[day_key]['evening'].append(emp_id)
-
-                    assignments_created.append({
-                        'day': day_names[day_idx],
-                        'date': day_key,
-                        'employee': emp.first_name,
-                        'shift': 'tarde',
-                        'hours': hours,
-                    })
+                for state in morning_candidates[:morning_deficit]:
+                    assign_employee(state, 'morning')
 
         # ========== PASO 3: Completar horas de empleados que no llegaron ==========
         employees_needing_hours = [
