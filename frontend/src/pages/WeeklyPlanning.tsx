@@ -206,7 +206,6 @@ export default function WeeklyPlanning() {
 
     setIsExporting(true);
     try {
-      const weekDate = safeFormat(selectedPlan.week_start_date, 'd MMMM yyyy', { locale: dateLocale });
       const weekDateShort = selectedPlan.week_start_date;
 
       // Exportar Calendario - SIN márgenes, toda la página
