@@ -626,7 +626,130 @@ class AssignmentOptimizer:
 
                             added_count += 1
 
+                    # Si aún faltan personas, usar ELASTICIDAD
+                    if added_count < to_add:
+                        from apps.rules.models import ElasticityRule
+
+                        # Buscar empleados que puedan usar horas extra
+                        elasticity_candidates = []
+                        for emp_id, info in availability.items():
+                            if emp_id in assigned_ids:
+                                continue
+                            if day_key in info.get('days_assigned', set()):
+                                continue
+
+                            emp = info.get('employee')
+                            if not emp:
+                                continue
+
+                            # Verificar si puede trabajar tarde
+                            can_evening = emp.allowed_blocks.filter(code='EVENING').exists()
+                            if not can_evening:
+                                continue
+
+                            # Verificar elasticidad
+                            try:
+                                rule = ElasticityRule.objects.get(elasticity_level=emp.elasticity)
+                                max_extra = float(rule.max_extra_hours_week)
+                            except ElasticityRule.DoesNotExist:
+                                max_extra = 0
+
+                            if max_extra > 0:
+                                extra_used = max(0, float(info['assigned']) - float(emp.weekly_hours_target))
+                                remaining_elasticity = max_extra - extra_used
+                                if remaining_elasticity >= self.evening_shift_hours:
+                                    elasticity_candidates.append((emp, remaining_elasticity))
+
+                        # Ordenar por elasticidad restante
+                        elasticity_candidates.sort(key=lambda x: -x[1])
+
+                        for emp, _ in elasticity_candidates:
+                            if added_count >= to_add:
+                                break
+
+                            shift_template = self.shifts.get(f'{emp.role.code}_TARDE')
+                            if shift_template:
+                                ShiftAssignment.objects.create(
+                                    week_plan=week_plan,
+                                    date=current_date,
+                                    employee=emp,
+                                    shift_template=shift_template,
+                                    assigned_hours=self.evening_shift_hours,
+                                    is_day_off=False
+                                )
+                                changes['added'].append({
+                                    'date': day_key,
+                                    'employee': emp.first_name,
+                                    'shift': 'tarde',
+                                    'reason': 'elasticidad',
+                                })
+
+                                availability[emp.id]['assigned'] += self.evening_shift_hours
+                                availability[emp.id]['available'] -= self.evening_shift_hours
+                                availability[emp.id]['days_assigned'].add(day_key)
+                                assigned_ids.add(emp.id)
+
+                                added_count += 1
+
                     evening_count += added_count
+
+                    # Si aún faltan personas para tarde, REDISTRIBUIR desde mañana
+                    if evening_count < evening_needed:
+                        # Re-consultar asignaciones de mañana ACTUALES
+                        current_morning_assignments = list(ShiftAssignment.objects.filter(
+                            week_plan=week_plan,
+                            date=current_date,
+                            shift_template__time_block__code='DAY'
+                        ).select_related('employee'))
+
+                        # Buscar empleados en MAÑANA que pueden hacer TARDE
+                        candidates_to_move = []
+                        for assignment in current_morning_assignments:
+                            emp = assignment.employee
+                            if not emp:
+                                continue
+                            # Verificar si puede trabajar tarde
+                            can_evening = emp.allowed_blocks.filter(code='EVENING').exists()
+                            if can_evening:
+                                candidates_to_move.append(assignment)
+
+                        # Ordenar por elasticidad (HIGH primero - más flexibles)
+                        elasticity_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
+                        candidates_to_move.sort(
+                            key=lambda a: elasticity_order.get(a.employee.elasticity, 1)
+                        )
+
+                        # Mover de mañana a tarde hasta cubrir
+                        still_needed = evening_needed - evening_count
+                        moved_count = 0
+
+                        for assignment in candidates_to_move:
+                            if moved_count >= still_needed:
+                                break
+
+                            emp = assignment.employee
+                            # Obtener template de tarde para este empleado
+                            evening_template = self.shifts.get(f'{emp.role.code}_TARDE')
+                            if not evening_template:
+                                continue
+
+                            # Cambiar de mañana a tarde
+                            old_hours = float(assignment.assigned_hours)
+                            assignment.shift_template = evening_template
+                            assignment.assigned_hours = self.evening_shift_hours
+                            assignment.save()
+
+                            changes['moved'].append({
+                                'date': day_key,
+                                'employee': emp.first_name,
+                                'from': 'mañana',
+                                'to': 'tarde',
+                                'reason': 'cubrir_couvertures',
+                            })
+
+                            moved_count += 1
+
+                        evening_count += moved_count
 
                 elif evening_count > evening_needed:
                     # EXCESO: Remover personal
@@ -808,8 +931,22 @@ class AssignmentOptimizer:
                 if day_key in state1['days_assigned'] or day_key in state2['days_assigned']:
                     continue
 
-                # Determinar turno (preferir mañana si pueden)
-                if pair_can_morning:
+                # Determinar turno basado en necesidades del día
+                # Contar cuántos ya están asignados a cada turno este día
+                current_morning = len(assignments_by_day[day_key]['morning'])
+                current_evening = len(assignments_by_day[day_key]['evening'])
+                morning_needed_day = day_info['morning_needed']
+                evening_needed_day = day_info['evening_needed']
+
+                # Priorizar tarde si: pueden hacer tarde Y faltan personas para tarde
+                evening_deficit = evening_needed_day - current_evening
+                morning_deficit = morning_needed_day - current_morning
+
+                if pair_can_evening and evening_deficit > 0:
+                    # Hay déficit de tarde y la pareja puede hacer tarde
+                    shift_type = 'evening'
+                    shift_suffix = 'TARDE'
+                elif pair_can_morning:
                     shift_type = 'morning'
                     shift_suffix = 'MANANA'
                 elif pair_can_evening:

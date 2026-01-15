@@ -201,60 +201,91 @@ export default function WeeklyPlanning() {
     uploadMutation.reset();
   };
 
-  const handleExportPDF = async () => {
-    if (!scheduleRef.current || !selectedPlan) return;
+  const handleExportPDF = async (type: 'calendar' | 'legend' | 'both' = 'both') => {
+    if (!selectedPlan) return;
 
     setIsExporting(true);
     try {
-      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-
-      // Título
       const weekDate = safeFormat(selectedPlan.week_start_date, 'd MMMM yyyy', { locale: dateLocale });
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`Planning Semanal - ${weekDate}`, margin, 15);
+      const weekDateShort = selectedPlan.week_start_date;
 
-      // Capturar Schedule Grid
-      const scheduleCanvas = await html2canvas(scheduleRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
+      // Exportar Calendario - SIN márgenes, toda la página
+      if ((type === 'calendar' || type === 'both') && scheduleRef.current) {
+        const calendarPdf = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = calendarPdf.internal.pageSize.getWidth();
+        const pageHeight = calendarPdf.internal.pageSize.getHeight();
 
-      const scheduleImgData = scheduleCanvas.toDataURL('image/png');
-      const scheduleWidth = pageWidth - (margin * 2);
-      const scheduleHeight = (scheduleCanvas.height * scheduleWidth) / scheduleCanvas.width;
-
-      pdf.addImage(scheduleImgData, 'PNG', margin, 25, scheduleWidth, Math.min(scheduleHeight, pageHeight - 40));
-
-      // Si hay leyenda y cabe en la página o necesitamos otra
-      if (legendRef.current) {
-        const legendCanvas = await html2canvas(legendRef.current, {
+        // Capturar calendario
+        const scheduleCanvas = await html2canvas(scheduleRef.current, {
           scale: 2,
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
         });
 
-        const legendImgData = legendCanvas.toDataURL('image/png');
-        const legendWidth = pageWidth - (margin * 2);
-        const legendHeight = (legendCanvas.height * legendWidth) / legendCanvas.width;
+        // Usar TODO el ancho de la página, ajustar alto proporcionalmente
+        const imgRatio = scheduleCanvas.width / scheduleCanvas.height;
+        let finalWidth = pageWidth;
+        let finalHeight = pageWidth / imgRatio;
 
-        // Añadir nueva página para la leyenda
-        pdf.addPage();
-        pdf.setFontSize(14);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Distribución de Carga por Día', margin, 15);
-        pdf.addImage(legendImgData, 'PNG', margin, 25, legendWidth, Math.min(legendHeight, pageHeight - 40));
+        // Si es muy alto, ajustar por alto
+        if (finalHeight > pageHeight) {
+          finalHeight = pageHeight;
+          finalWidth = pageHeight * imgRatio;
+        }
+
+        // Centrar verticalmente si sobra espacio
+        const yOffset = (pageHeight - finalHeight) / 2;
+        const xOffset = (pageWidth - finalWidth) / 2;
+
+        calendarPdf.addImage(scheduleCanvas.toDataURL('image/png'), 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+        calendarPdf.save(`calendario_${weekDateShort}.pdf`);
       }
 
-      // Guardar
-      const fileName = `planning_${selectedPlan.week_start_date}.pdf`;
-      pdf.save(fileName);
+      // Exportar Leyenda - forzar ancho completo
+      if ((type === 'legend' || type === 'both') && legendRef.current) {
+        const legendPdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = legendPdf.internal.pageSize.getWidth();
+        const pageHeight = legendPdf.internal.pageSize.getHeight();
+
+        // Guardar estilos originales
+        const originalWidth = legendRef.current.style.width;
+        const originalMaxWidth = legendRef.current.style.maxWidth;
+
+        // Forzar ancho completo temporalmente
+        legendRef.current.style.width = '100vw';
+        legendRef.current.style.maxWidth = '100vw';
+
+        // Capturar leyenda con ancho forzado
+        const legendCanvas = await html2canvas(legendRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: 1200,
+        });
+
+        // Restaurar estilos originales
+        legendRef.current.style.width = originalWidth;
+        legendRef.current.style.maxWidth = originalMaxWidth;
+
+        // Usar todo el ancho de la página
+        const finalWidth = pageWidth;
+        const finalHeight = (legendCanvas.height * pageWidth) / legendCanvas.width;
+
+        // Si es muy alto, paginar o escalar
+        if (finalHeight <= pageHeight) {
+          legendPdf.addImage(legendCanvas.toDataURL('image/png'), 'PNG', 0, 0, finalWidth, finalHeight);
+        } else {
+          // Escalar para que quepa en una página
+          const scale = pageHeight / finalHeight;
+          const scaledWidth = finalWidth * scale;
+          const xOffset = (pageWidth - scaledWidth) / 2;
+          legendPdf.addImage(legendCanvas.toDataURL('image/png'), 'PNG', xOffset, 0, scaledWidth, pageHeight);
+        }
+
+        legendPdf.save(`leyenda_${weekDateShort}.pdf`);
+      }
     } catch (error) {
       console.error('Error exporting PDF:', error);
     } finally {
@@ -574,28 +605,59 @@ export default function WeeklyPlanning() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleExportPDF}
-                      disabled={isExporting}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                    >
-                      {isExporting ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          {t.weekly.exporting}
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          {t.weekly.exportPdf}
-                        </>
+                    {/* Dropdown para exportar PDF */}
+                    <div className="relative group">
+                      <button
+                        disabled={isExporting}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                      >
+                        {isExporting ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {t.weekly.exporting}
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {t.weekly.exportPdf}
+                            <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                      {!isExporting && (
+                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                          <button
+                            onClick={() => handleExportPDF('calendar')}
+                            className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm flex items-center gap-2 rounded-t-lg"
+                          >
+                            <span className="text-blue-500">📅</span>
+                            Calendario
+                          </button>
+                          <button
+                            onClick={() => handleExportPDF('legend')}
+                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm flex items-center gap-2"
+                          >
+                            <span className="text-orange-500">📊</span>
+                            Leyenda / Carga
+                          </button>
+                          <div className="border-t border-gray-100"></div>
+                          <button
+                            onClick={() => handleExportPDF('both')}
+                            className="w-full text-left px-4 py-2 hover:bg-purple-50 text-sm flex items-center gap-2 rounded-b-lg font-medium"
+                          >
+                            <span>📦</span>
+                            Ambos PDFs
+                          </button>
+                        </div>
                       )}
-                    </button>
+                    </div>
                     <button
                       onClick={handleDelete}
                       disabled={deleteMutation.isPending}
