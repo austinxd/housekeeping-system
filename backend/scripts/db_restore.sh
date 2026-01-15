@@ -31,9 +31,25 @@ DB_PASSWORD="${DB_PASSWORD:-}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
 
-# Ruta de MySQL
-MYSQL_PATH="/usr/local/mysql-9.5.0-macos15-arm64/bin"
-export DYLD_LIBRARY_PATH="/usr/local/mysql-9.5.0-macos15-arm64/lib:$DYLD_LIBRARY_PATH"
+# Detectar ruta de MySQL automáticamente
+if [ -x "/usr/bin/mysql" ]; then
+    # Linux (AlmaLinux, Ubuntu, etc.)
+    MYSQL_PATH="/usr/bin"
+elif [ -x "/usr/local/mysql-9.5.0-macos15-arm64/bin/mysql" ]; then
+    # macOS con MySQL instalado manualmente
+    MYSQL_PATH="/usr/local/mysql-9.5.0-macos15-arm64/bin"
+    export DYLD_LIBRARY_PATH="/usr/local/mysql-9.5.0-macos15-arm64/lib:$DYLD_LIBRARY_PATH"
+elif [ -x "/usr/local/bin/mysql" ]; then
+    # macOS con Homebrew
+    MYSQL_PATH="/usr/local/bin"
+else
+    # Buscar en PATH
+    MYSQL_PATH="$(dirname "$(which mysql 2>/dev/null)")"
+    if [ -z "$MYSQL_PATH" ]; then
+        echo -e "${RED}Error: No se encontró MySQL${NC}"
+        exit 1
+    fi
+fi
 
 # Función para ejecutar MySQL
 mysql_exec() {
