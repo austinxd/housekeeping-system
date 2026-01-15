@@ -18,6 +18,7 @@ from apps.shifts.models import ShiftTemplate
 from apps.planning.models import WeekPlan, ShiftAssignment
 from apps.planning.services.forecast_loader import ForecastLoader
 from apps.planning.services.daily_distribution import DailyDistributionCalculator
+from apps.planning.services.staffing_rules import get_evening_persons_needed
 
 
 class AssignmentOptimizer:
@@ -394,22 +395,8 @@ class AssignmentOptimizer:
             room_work_min = (departs * DEPART_MIN) + (recouch * RECOUCH_MIN)
             couv_work_min = couvertures * COUV_MIN
 
-            # REGLA DE NEGOCIO para personas tarde (couvertures):
-            # > 38 couvertures → 4 personas
-            # > 25 couvertures → 3 personas
-            # > 13 couvertures → 2 personas
-            # 1-13 couvertures → 1 persona
-            # 0 couvertures → 0 personas
-            if couvertures > 38:
-                evening_persons_for_couv = 4
-            elif couvertures > 25:
-                evening_persons_for_couv = 3
-            elif couvertures > 13:
-                evening_persons_for_couv = 2
-            elif couvertures > 0:
-                evening_persons_for_couv = 1
-            else:
-                evening_persons_for_couv = 0
+            # Regla de negocio centralizada en staffing_rules.py
+            evening_persons_for_couv = get_evening_persons_needed(couvertures)
 
             # Tiempo que tarde ayuda con habitaciones (P2 + P3)
             evening_help_min = evening_persons_for_couv * (P2_MIN + P3_MIN)
