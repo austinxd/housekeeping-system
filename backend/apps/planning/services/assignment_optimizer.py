@@ -1069,29 +1069,7 @@ class AssignmentOptimizer:
                     'hours': hours,
                 })
 
-            # === PASO 2.1: PRIMERO cubrir TARDE si hay déficit de couvertures ===
-            if evening_deficit > 0:
-                evening_candidates = get_available_candidates('evening')
-                # Priorizar: quien puede SOLO tarde > quien puede ambos
-                evening_candidates.sort(key=lambda s: (
-                    # Primero los que NO pueden mañana (solo tarde)
-                    0 if not self.can_employee_work_shift(s['employee'].id, 'morning') else 1,
-                    # Luego VDC antes que FDC para tarde
-                    0 if s['role'] == 'VDC' else 1,
-                    # Más horas pendientes primero
-                    -(s['target_hours'] - s['assigned_hours']),
-                ))
-
-                for state in evening_candidates[:evening_deficit]:
-                    assign_employee(state, 'evening')
-
-                # Actualizar cuenta
-                evening_count = len(assignments_by_day[day_key]['evening'])
-
-            # === PASO 2.2: LUEGO cubrir MAÑANA con los restantes ===
-            morning_count = len(assignments_by_day[day_key]['morning'])
-            morning_deficit = morning_needed - morning_count
-
+            # === PASO 2.1: PRIMERO cubrir MAÑANA (es lo crítico) ===
             if morning_deficit > 0:
                 morning_candidates = get_available_candidates('morning')
                 # FDC primero, más horas pendientes primero
@@ -1102,6 +1080,79 @@ class AssignmentOptimizer:
 
                 for state in morning_candidates[:morning_deficit]:
                     assign_employee(state, 'morning')
+
+            # === PASO 2.2: LUEGO cubrir TARDE ===
+            evening_count = len(assignments_by_day[day_key]['evening'])
+            evening_deficit = evening_needed - evening_count
+
+            if evening_deficit > 0:
+                evening_candidates = get_available_candidates('evening')
+                evening_candidates.sort(key=lambda s: (
+                    0 if s['role'] == 'VDC' else 1,
+                    -(s['target_hours'] - s['assigned_hours']),
+                ))
+
+                for state in evening_candidates[:evening_deficit]:
+                    assign_employee(state, 'evening')
+
+            # === PASO 2.3: SI AÚN HAY DÉFICIT DE TARDE, mover alguien de mañana ===
+            evening_count = len(assignments_by_day[day_key]['evening'])
+            evening_deficit = evening_needed - evening_count
+
+            if evening_deficit > 0:
+                # Buscar empleados asignados a mañana HOY que también pueden hacer tarde
+                morning_assigned_today = assignments_by_day[day_key]['morning']
+                morning_current_count = len(morning_assigned_today)
+
+                # Solo mover si mañana tiene MÁS de lo mínimo necesario
+                morning_min_needed = max(2, morning_needed)
+                can_move = morning_current_count - morning_min_needed
+
+                if can_move > 0:
+                    # Buscar quién de mañana puede hacer tarde
+                    moveable = []
+                    for emp_id in morning_assigned_today:
+                        if self.can_employee_work_shift(emp_id, 'evening'):
+                            # No mover parejas (complicaría todo)
+                            if self.get_partner_id(emp_id) is None:
+                                moveable.append(emp_id)
+
+                    # Mover los necesarios
+                    to_move = min(evening_deficit, can_move, len(moveable))
+                    for emp_id in moveable[:to_move]:
+                        # Eliminar de mañana
+                        assignment = ShiftAssignment.objects.filter(
+                            week_plan=week_plan,
+                            date=day_date,
+                            employee_id=emp_id
+                        ).first()
+
+                        if assignment:
+                            emp = assignment.employee
+                            hours = assignment.assigned_hours
+
+                            # Cambiar a tarde
+                            suffix = 'TARDE'
+                            if hours <= self.short_shift_hours + 0.5:
+                                suffix = 'TARDE_CORTO'
+
+                            shift_template = self.shifts.get(f'{emp.role.code}_{suffix}')
+                            if not shift_template:
+                                shift_template = self.shifts.get(f'FDC_{suffix}')
+
+                            assignment.shift_template = shift_template
+                            assignment.save()
+
+                            # Actualizar tracking
+                            assignments_by_day[day_key]['morning'].remove(emp_id)
+                            assignments_by_day[day_key]['evening'].append(emp_id)
+
+                            # Actualizar log
+                            for a in assignments_created:
+                                if a['date'] == day_key and a['employee'] == emp.first_name:
+                                    a['shift'] = 'tarde'
+                                    a['moved_from_morning'] = True
+                                    break
 
         # ========== PASO 3: Completar horas de empleados que no llegaron ==========
         employees_needing_hours = [
