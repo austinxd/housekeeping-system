@@ -961,10 +961,12 @@ class DailyDistributionCalculator:
                     'name': 'couvertures',
                     'time_range': f"{self.couv_start} - {actual_couv_end}",
                     'persons_assigned': num_evening,
-                    'persons_needed': num_evening if not couv_needs_more_persons else num_evening + couv_extra_persons_needed,
+                    # Regla de negocio: >38=4, >25=3, >13=2, >0=1
+                    'persons_needed': 4 if occupied > 38 else (3 if occupied > 25 else (2 if occupied > 13 else (1 if occupied > 0 else 0))),
                     'persons_effective': effective_couv_persons,
-                    'needs_more_persons': couv_needs_more_persons,
-                    'extra_persons_needed': couv_extra_persons_needed,
+                    # Comparar con regla de negocio
+                    'needs_more_persons': num_evening < (4 if occupied > 38 else (3 if occupied > 25 else (2 if occupied > 13 else (1 if occupied > 0 else 0)))),
+                    'extra_persons_needed': max(0, (4 if occupied > 38 else (3 if occupied > 25 else (2 if occupied > 13 else (1 if occupied > 0 else 0)))) - num_evening),
                     'persons_display': evening_individual_names,
                     'capacity_min': current_couv_capacity,
                     'period_min': actual_couv_period_min,
@@ -983,7 +985,7 @@ class DailyDistributionCalculator:
                     'can_cover_with_elasticity': can_cover_with_elasticity,
                     'elasticity_available_min': round(total_elasticity_available, 1),
                     'elasticity_extra_per_person_min': round(extra_min_per_person, 1),
-                    'has_deficit': couv_needs_more_persons,
+                    'has_deficit': num_evening < (4 if occupied > 38 else (3 if occupied > 25 else (2 if occupied > 13 else (1 if occupied > 0 else 0)))),
                     # Sugerencia clara
                     'suggestion': (
                         f"Agregar trabajador: {workers_with_available_hours[0]['name']}" if can_add_workers and workers_with_available_hours
