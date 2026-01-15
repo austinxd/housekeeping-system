@@ -51,11 +51,11 @@ fi
 
 # Función para ejecutar MySQL
 mysql_exec() {
-    "$MYSQL_PATH/mysql" -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" -P "$DB_PORT" "$@"
+    MYSQL_PWD="$DB_PASSWORD" "$MYSQL_PATH/mysql" -u "$DB_USER" -h "$DB_HOST" -P "$DB_PORT" "$@"
 }
 
 mysql_dump() {
-    "$MYSQL_PATH/mysqldump" -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" -P "$DB_PORT" "$@"
+    MYSQL_PWD="$DB_PASSWORD" "$MYSQL_PATH/mysqldump" -u "$DB_USER" -h "$DB_HOST" -P "$DB_PORT" "$@"
 }
 
 echo -e "${YELLOW}========================================${NC}"
@@ -106,16 +106,17 @@ echo -e "${YELLOW}[1/3] Eliminando tablas existentes...${NC}"
 TABLES=$(mysql_exec -N -e "SELECT GROUP_CONCAT(table_name) FROM information_schema.tables WHERE table_schema='$DB_NAME';")
 
 if [ -n "$TABLES" ] && [ "$TABLES" != "NULL" ]; then
-    mysql_exec -e "SET FOREIGN_KEY_CHECKS=0;" "$DB_NAME"
-
-    # Eliminar cada tabla
+    # Construir comando SQL para eliminar todas las tablas en una sesión
+    DROP_SQL="SET FOREIGN_KEY_CHECKS=0; "
     IFS=',' read -ra TABLE_ARRAY <<< "$TABLES"
     for table in "${TABLE_ARRAY[@]}"; do
         echo "  Eliminando: $table"
-        mysql_exec -e "DROP TABLE IF EXISTS \`$table\`;" "$DB_NAME" || echo -e "${RED}  Error eliminando $table${NC}"
+        DROP_SQL+="DROP TABLE IF EXISTS \`$table\`; "
     done
+    DROP_SQL+="SET FOREIGN_KEY_CHECKS=1;"
 
-    mysql_exec -e "SET FOREIGN_KEY_CHECKS=1;" "$DB_NAME"
+    # Ejecutar todo en una sola conexión
+    mysql_exec -e "$DROP_SQL" "$DB_NAME"
     echo -e "${GREEN}  ✓ Tablas eliminadas${NC}"
 else
     echo -e "${GREEN}  ✓ BD ya está vacía${NC}"
